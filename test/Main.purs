@@ -12,6 +12,13 @@ foreign import stringLength :: String -> Int -- really?
 len :: forall a. Show a => a -> Int
 len = stringLength <<< show
 
+btcAddress :: (Crypto.Key Crypto.PublicKey) -> Crypto.EncodeData
+btcAddress pk = show pk
+  # Crypto.hash Crypto.SHA256
+  # Crypto.hash Crypto.SHA256
+  # Crypto.hash Crypto.RIPEMD160
+  # Crypto.baseEncode Crypto.BASE58
+
 main :: forall e. Eff (console :: CONSOLE, assert :: ASSERT | e) Unit
 main = do
   let msg = Crypto.hash Crypto.SHA256 "some msg"
@@ -32,3 +39,6 @@ main = do
 
   let decoded = Crypto.baseDecode Crypto.BASE58 encoded
   assert (decoded == msg)
+
+  let address = btcAddress pair.public
+  log ("BTC address: " <> show address)
