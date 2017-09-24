@@ -19,11 +19,19 @@ data Key a = Key KeyData
 
 type KeyPair = { private :: Key PrivateKey, public :: Key PublicKey }
 
+data Hash = SHA1 | SHA256 | SHA512 | RIPEMD160
+
 instance showKey :: Show (Key a) where
   show = keyToString
 
 instance showSignature :: Show Signature where
   show = sigToString
+
+instance showHash :: Show Hash where
+  show SHA1      = "sha1"
+  show SHA256    = "sha256"
+  show SHA512    = "sha512"
+  show RIPEMD160 = "ripemd160"
 
 generateKeyPair :: forall e. Eff (e) KeyPair
 generateKeyPair = do
@@ -31,5 +39,5 @@ generateKeyPair = do
   let public = derivePublicKey private
   pure { private, public }
 
-hash :: String -> String
-hash = hashWith "sha256"
+hash :: Hash -> String -> String
+hash hashType content = hashWith (show hashType) content

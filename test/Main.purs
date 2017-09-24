@@ -14,7 +14,7 @@ len = stringLength <<< show
 
 main :: forall e. Eff (console :: CONSOLE, assert :: ASSERT | e) Unit
 main = do
-  let msg = Crypto.hash "some msg"
+  let msg = Crypto.hash Crypto.SHA256 "some msg"
   assert (stringLength msg == 64)
 
   pair <- Crypto.generateKeyPair
