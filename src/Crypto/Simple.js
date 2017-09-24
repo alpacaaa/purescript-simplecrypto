@@ -2,6 +2,7 @@
 
 const crypto = require("crypto")
 const secp256k1 = require("secp256k1")
+const baseX = require("base-x")
 
 exports.hashWith = function(algo) {
   return function(value) {
@@ -54,3 +55,16 @@ const bufferToHex = function(buffer) {
 
 exports.keyToString = bufferToHex
 exports.sigToString = bufferToHex
+exports.encToString = bufferToHex
+
+exports.encodeWith = function(encoding) {
+  return function(value) {
+    return baseX(encoding).encode(Buffer.from(value, "hex"))
+  }
+}
+
+exports.decodeWith = function(encoding) {
+  return function(value) {
+    return baseX(encoding).decode(value).toString("hex")
+  }
+}

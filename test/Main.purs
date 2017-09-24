@@ -26,3 +26,9 @@ main = do
   let verify = Crypto.verify pair.public signature msg
   log ("Signature valid: " <> show verify)
   assert (verify == true)
+
+  let encoded = Crypto.baseEncode Crypto.BASE58 msg
+  log ("Encoded base58: " <> show encoded)
+
+  let decoded = Crypto.baseDecode Crypto.BASE58 encoded
+  assert (decoded == msg)
