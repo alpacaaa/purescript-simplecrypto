@@ -1,4 +1,17 @@
-module Crypto.Simple where
+module Crypto.Simple
+  ( generateKeyPair
+  , hash
+  , sign
+  , verify
+  , createPrivateKey
+  , derivePublicKey
+  , PrivateKey
+  , PublicKey
+  , Signature
+  , Key
+  , KeyPair
+  , Hash(..)
+  ) where
 
 import Prelude
 import Control.Monad.Eff (Eff)
