@@ -12,6 +12,7 @@
   "author": "Marco Sampellegrini <babbonatale@alpacaaa.net>",
   "license": "ISC",
   "dependencies": {
+    "base-x": "^3.0.2",
     "secp256k1": "^3.3.0"
   }
 }
