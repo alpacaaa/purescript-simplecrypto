@@ -14,6 +14,9 @@ foreign import stringLength :: String -> Int -- really?
 len :: forall a. Show a => a -> Int
 len = stringLength <<< show
 
+try :: forall a. Maybe a -> a
+try a = unsafePartial $ fromJust a
+
 btcAddress :: Crypto.PublicKey -> Maybe Crypto.EncodeData
 btcAddress pk = show pk
   # Crypto.hash Crypto.SHA256
@@ -29,18 +32,18 @@ main = do
   pair <- Crypto.generateKeyPair
   assert (len pair.private == 64)
 
-  let signature = unsafePartial $ fromJust $ Crypto.sign pair.private msg
+  let signature = try (Crypto.sign pair.private msg)
   log ("Signature: " <> show signature)
 
   let verify = Crypto.verify pair.public signature msg
   log ("Signature valid: " <> show verify)
   assert (verify == true)
 
-  let encoded = unsafePartial $ fromJust $ Crypto.baseEncode Crypto.BASE58 msg
+  let encoded = try (Crypto.baseEncode Crypto.BASE58 msg)
   log ("Encoded base58: " <> show encoded)
 
-  let decoded = unsafePartial $ fromJust $ Crypto.baseDecode Crypto.BASE58 encoded
+  let decoded = try (Crypto.baseDecode Crypto.BASE58 encoded)
   assert (decoded == msg)
 
-  let address = unsafePartial $ fromJust $ btcAddress pair.public
+  let address = try (btcAddress pair.public)
   log ("BTC address: " <> show address)
