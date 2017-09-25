@@ -10,7 +10,6 @@ module Crypto.Simple
   , PrivateKey
   , PublicKey
   , Signature
-  , Key
   , KeyPair
   , Hash(..)
   , BaseEncoding(..)
@@ -19,39 +18,39 @@ module Crypto.Simple
 
 import Prelude
 import Control.Monad.Eff (Eff)
+import Data.Maybe (Maybe(..))
 
-foreign import data KeyData :: Type
-foreign import data EncodeData :: Type
 foreign import hashWith :: String -> String -> String
-foreign import createPrivateKey :: forall e. Int -> Eff (e) (Key PrivateKey)
-foreign import derivePublicKey :: (Key PrivateKey) -> (Key PublicKey)
-foreign import sign :: (Key PrivateKey) -> String -> Signature
-foreign import verify :: (Key PublicKey) -> Signature -> String -> Boolean
-foreign import encodeWith :: String -> String -> EncodeData
-foreign import decodeWith :: String -> EncodeData -> String
-foreign import keyToString :: forall a. Key a -> String
-foreign import sigToString :: Signature -> String
-foreign import encToString :: EncodeData -> String
+foreign import createPrivateKey :: forall e. Int -> Eff (e) PrivateKey
+foreign import derivePublicKey :: PrivateKey -> PublicKey
+foreign import signFn :: forall a. (a -> Maybe a) -> Maybe a -> PrivateKey -> String -> Maybe Signature
+foreign import verify :: PublicKey -> Signature -> String -> Boolean
+foreign import encodeWith :: forall a. (a -> Maybe a) -> Maybe a -> String -> String -> Maybe EncodeData
+foreign import decodeWith :: forall a. (a -> Maybe a) -> Maybe a -> String -> EncodeData -> Maybe String
+foreign import bufferToHex :: forall a. a -> String
 
-data PrivateKey
-data PublicKey
-data Signature
-data Key a = Key KeyData
+data PrivateKey = PrivateKey
+data PublicKey  = PublicKey
+data Signature  = Signature
+data EncodeData = EncodeData
 
-type KeyPair = { private :: Key PrivateKey, public :: Key PublicKey }
+type KeyPair = { private :: PrivateKey, public :: PublicKey }
 
 data Hash = SHA1 | SHA256 | SHA512 | RIPEMD160
 
 data BaseEncoding = BASE58
 
-instance showKey :: Show (Key a) where
-  show = keyToString
+instance showPrivateKey :: Show PrivateKey where
+  show = bufferToHex
+
+instance showPublicKey :: Show PublicKey where
+  show = bufferToHex
 
 instance showSignature :: Show Signature where
-  show = sigToString
+  show = bufferToHex
 
 instance showEncodeData :: Show EncodeData where
-  show = encToString
+  show = bufferToHex
 
 instance showHash :: Show Hash where
   show SHA1      = "sha1"
@@ -71,11 +70,14 @@ generateKeyPair = do
 hash :: Hash -> String -> String
 hash hashType content = hashWith (show hashType) content
 
-baseEncode :: BaseEncoding -> String -> EncodeData
-baseEncode encType content = encodeWith (baseAlphabet encType) content
+sign :: PrivateKey -> String -> Maybe Signature
+sign pk value = signFn Just Nothing pk value
 
-baseDecode :: BaseEncoding -> EncodeData -> String
-baseDecode encType encoded = decodeWith (baseAlphabet encType) encoded
+baseEncode :: BaseEncoding -> String -> Maybe EncodeData
+baseEncode encType content = encodeWith Just Nothing (baseAlphabet encType) content
+
+baseDecode :: BaseEncoding -> EncodeData -> Maybe String
+baseDecode encType encoded = decodeWith Just Nothing (baseAlphabet encType) encoded
 
 baseAlphabet :: BaseEncoding -> String
 baseAlphabet BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"

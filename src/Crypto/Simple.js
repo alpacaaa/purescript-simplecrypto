@@ -6,7 +6,10 @@ const baseX = require("base-x")
 
 exports.hashWith = function(algo) {
   return function(value) {
-    return crypto.createHash(algo).update(value).digest("hex")
+    return crypto
+      .createHash(algo)
+      .update(value)
+      .digest("hex")
   }
 }
 
@@ -29,10 +32,18 @@ exports.derivePublicKey = function(privateKey) {
   return secp256k1.publicKeyCreate(privateKey)
 }
 
-exports.sign = function(privateKey) {
-  return function(message) {
-    const ret = secp256k1.sign(Buffer.from(message, "hex"), privateKey)
-    return ret.signature
+exports.signFn = function(success) {
+  return function(failure) {
+    return function(privateKey) {
+      return function(message) {
+        try {
+          const ret = secp256k1.sign(Buffer.from(message, "hex"), privateKey)
+          return success(ret.signature)
+        } catch (e) {
+          return failure
+        }
+      }
+    }
   }
 }
 
@@ -40,9 +51,12 @@ exports.verify = function(publicKey) {
   return function(signature) {
     return function(message) {
       try {
-        return secp256k1.verify(Buffer.from(message, "hex"), signature, publicKey)
-      }
-      catch (e) {
+        return secp256k1.verify(
+          Buffer.from(message, "hex"),
+          signature,
+          publicKey
+        )
+      } catch (e) {
         return false
       }
     }
@@ -53,18 +67,36 @@ const bufferToHex = function(buffer) {
   return buffer.toString("hex")
 }
 
-exports.keyToString = bufferToHex
-exports.sigToString = bufferToHex
-exports.encToString = bufferToHex
+exports.bufferToHex = bufferToHex
 
-exports.encodeWith = function(encoding) {
-  return function(value) {
-    return baseX(encoding).encode(Buffer.from(value, "hex"))
+exports.encodeWith = function(success) {
+  return function(failure) {
+    return function(encoding) {
+      return function(value) {
+        try {
+          const ret = baseX(encoding).encode(Buffer.from(value, "hex"))
+          return success(ret)
+        } catch (e) {
+          return failure
+        }
+      }
+    }
   }
 }
 
-exports.decodeWith = function(encoding) {
-  return function(value) {
-    return baseX(encoding).decode(value).toString("hex")
+exports.decodeWith = function(success) {
+  return function(failure) {
+    return function(encoding) {
+      return function(value) {
+        try {
+          const ret = baseX(encoding)
+            .decode(value)
+            .toString("hex")
+          return success(ret)
+        } catch (e) {
+          return failure
+        }
+      }
+    }
   }
 }
