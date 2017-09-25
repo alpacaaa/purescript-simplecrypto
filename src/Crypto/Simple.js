@@ -1,8 +1,8 @@
 "use strict"
 
-const crypto = require("crypto")
+const crypto    = require("crypto")
 const secp256k1 = require("secp256k1")
-const baseX = require("base-x")
+const baseX     = require("base-x")
 
 exports.hashWith = function(algo) {
   return function(value) {
