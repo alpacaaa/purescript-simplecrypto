@@ -20,7 +20,7 @@ import Prelude
 import Control.Monad.Eff (Eff)
 import Data.Maybe (Maybe(..))
 
-foreign import hashWith         :: String -> String -> String
+foreign import hashWith         :: HashAlgorithm -> String -> String
 foreign import createPrivateKey :: forall e. Int -> Eff (e) PrivateKey
 foreign import derivePublicKey  :: PrivateKey -> PublicKey
 foreign import signFn           :: forall a. (Signature -> Maybe Signature) -> Maybe a -> PrivateKey -> String -> Maybe Signature
@@ -42,6 +42,8 @@ data BaseEncoding = BASE58
 
 newtype Alphabet = Alphabet String
 
+newtype HashAlgorithm = HashAlgorithm String
+
 instance showPrivateKey :: Show PrivateKey where
   show = bufferToHex
 
@@ -54,14 +56,6 @@ instance showSignature :: Show Signature where
 instance showEncodeData :: Show EncodeData where
   show = bufferToHex
 
-instance showHash :: Show Hash where
-  show SHA1      = "sha1"
-  show SHA256    = "sha256"
-  show SHA512    = "sha512"
-  show RIPEMD160 = "ripemd160"
-
-instance showBaseEncoding :: Show BaseEncoding where
-  show BASE58 = "base58"
 
 generateKeyPair :: forall e. Eff (e) KeyPair
 generateKeyPair = do
@@ -69,8 +63,14 @@ generateKeyPair = do
   let public = derivePublicKey private
   pure { private, public }
 
+hashToAlgo :: Hash -> HashAlgorithm
+hashToAlgo SHA1      = HashAlgorithm "sha1"
+hashToAlgo SHA256    = HashAlgorithm "sha256"
+hashToAlgo SHA512    = HashAlgorithm "sha512"
+hashToAlgo RIPEMD160 = HashAlgorithm "ripemd160"
+
 hash :: Hash -> String -> String
-hash hashType content = hashWith (show hashType) content
+hash hashType content = hashWith (hashToAlgo hashType) content
 
 sign :: PrivateKey -> String -> Maybe Signature
 sign pk value = signFn Just Nothing pk value
