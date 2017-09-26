@@ -11,9 +11,6 @@ import Crypto.Simple as Crypto
 
 foreign import stringLength :: String -> Int -- really?
 
-len :: forall a. Show a => a -> Int
-len = stringLength <<< show
-
 try :: forall a. Maybe a -> a
 try a = unsafePartial $ fromJust a
 
@@ -30,7 +27,7 @@ main = do
   assert (stringLength msg == 64)
 
   pair <- Crypto.generateKeyPair
-  assert (len pair.private == 64)
+  assert $ stringLength (show pair.private) == 64
 
   let signature = try (Crypto.sign pair.private msg)
   log ("Signature: " <> show signature)
