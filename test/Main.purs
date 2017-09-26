@@ -33,7 +33,6 @@ main = do
   log ("Signature: " <> show signature)
 
   let verify = Crypto.verify pair.public signature msg
-  log ("Signature valid: " <> show verify)
   assert (verify == true)
 
   let encoded = try (Crypto.baseEncode Crypto.BASE58 msg)

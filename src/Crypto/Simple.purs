@@ -10,10 +10,10 @@ module Crypto.Simple
   , PrivateKey
   , PublicKey
   , Signature
+  , EncodeData
   , KeyPair
   , Hash(..)
   , BaseEncoding(..)
-  , EncodeData
   ) where
 
 import Prelude

@@ -1,8 +1,8 @@
 "use strict"
 
 const crypto    = require("crypto")
-const secp256k1 = require("secp256k1")
 const baseX     = require("base-x")
+const secp256k1 = require("secp256k1")
 
 exports.hashWith = function(algo) {
   return function(value) {
@@ -14,9 +14,9 @@ exports.hashWith = function(algo) {
 }
 
 const generatePrivateKey = function(bytes) {
-  const privKey = crypto.randomBytes(bytes)
-  if (secp256k1.privateKeyVerify(privKey)) {
-    return privKey
+  const privateKey = crypto.randomBytes(bytes)
+  if (secp256k1.privateKeyVerify(privateKey)) {
+    return privateKey
   }
 
   return generatePrivateKey(bytes)
@@ -63,11 +63,9 @@ exports.verify = function(publicKey) {
   }
 }
 
-const bufferToHex = function(buffer) {
+exports.bufferToHex = function(buffer) {
   return buffer.toString("hex")
 }
-
-exports.bufferToHex = bufferToHex
 
 exports.encodeWith = function(success) {
   return function(failure) {
