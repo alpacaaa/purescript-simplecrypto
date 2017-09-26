@@ -20,15 +20,13 @@ import Prelude
 import Control.Monad.Eff (Eff)
 import Data.Maybe (Maybe(..))
 
-type WithFailure a cont = (a -> Maybe a) -> Maybe a -> cont
-
 foreign import hashWith         :: String -> String -> String
 foreign import createPrivateKey :: forall e. Int -> Eff (e) PrivateKey
 foreign import derivePublicKey  :: PrivateKey -> PublicKey
-foreign import signFn           :: forall a. WithFailure a (PrivateKey -> String -> Maybe Signature)
+foreign import signFn           :: forall a. (Signature -> Maybe Signature) -> Maybe a -> PrivateKey -> String -> Maybe Signature
 foreign import verify           :: PublicKey -> Signature -> String -> Boolean
-foreign import encodeWith       :: forall a. WithFailure a (String -> String -> Maybe EncodeData)
-foreign import decodeWith       :: forall a. WithFailure a (String -> EncodeData -> Maybe String)
+foreign import encodeWith       :: forall a. (EncodeData -> Maybe EncodeData) -> Maybe a -> String -> String -> Maybe EncodeData
+foreign import decodeWith       :: forall a. (String -> Maybe String) -> Maybe a -> String -> EncodeData -> Maybe String
 foreign import bufferToHex      :: forall a. a -> String
 
 data PrivateKey
