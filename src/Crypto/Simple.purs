@@ -25,8 +25,8 @@ foreign import createPrivateKey :: forall e. Int -> Eff (e) PrivateKey
 foreign import derivePublicKey  :: PrivateKey -> PublicKey
 foreign import signFn           :: forall a. (Signature -> Maybe Signature) -> Maybe a -> PrivateKey -> String -> Maybe Signature
 foreign import verify           :: PublicKey -> Signature -> String -> Boolean
-foreign import encodeWith       :: forall a. (EncodeData -> Maybe EncodeData) -> Maybe a -> String -> String -> Maybe EncodeData
-foreign import decodeWith       :: forall a. (String -> Maybe String) -> Maybe a -> String -> EncodeData -> Maybe String
+foreign import encodeWith       :: forall a. (EncodeData -> Maybe EncodeData) -> Maybe a -> Alphabet -> String -> Maybe EncodeData
+foreign import decodeWith       :: forall a. (String -> Maybe String) -> Maybe a -> Alphabet -> EncodeData -> Maybe String
 foreign import bufferToHex      :: forall a. a -> String
 
 data PrivateKey
@@ -39,6 +39,8 @@ type KeyPair = { private :: PrivateKey, public :: PublicKey }
 data Hash = SHA1 | SHA256 | SHA512 | RIPEMD160
 
 data BaseEncoding = BASE58
+
+newtype Alphabet = Alphabet String
 
 instance showPrivateKey :: Show PrivateKey where
   show = bufferToHex
@@ -79,5 +81,5 @@ baseEncode encType content = encodeWith Just Nothing (baseAlphabet encType) cont
 baseDecode :: BaseEncoding -> EncodeData -> Maybe String
 baseDecode encType encoded = decodeWith Just Nothing (baseAlphabet encType) encoded
 
-baseAlphabet :: BaseEncoding -> String
-baseAlphabet BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+baseAlphabet :: BaseEncoding -> Alphabet
+baseAlphabet BASE58 = Alphabet "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
