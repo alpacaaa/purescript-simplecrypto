@@ -89,3 +89,7 @@ main = do
 
   -- BTC address: 2coF1xKLYoUCoQc3nFYs9NgoauQJ
 ```
+
+### Documentation
+
+Module documentation is [published on Pursuit](http://pursuit.purescript.org/packages/purescript-simplecrypto).
