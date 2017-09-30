@@ -10,7 +10,7 @@ A set of useful cryptographic utilities for blockchain development.
 - ECDSA public/private key generation
 - ECDSA signatures
 - SHA256/SHA512/RIPEMD160 hashing
-- Base58 encoding
+- Base58 encoding/decoding
 
 
 
