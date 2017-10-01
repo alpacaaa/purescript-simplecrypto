@@ -1,8 +1,8 @@
 "use strict"
 
-const crypto    = require("crypto")
-const baseX     = require("base-x")
-const secp256k1 = require("secp256k1")
+const crypto       = require("crypto")
+const getBasex     = lazyLoad("base-x")
+const getSecp256k1 = lazyLoad("secp256k1")
 
 exports.hashWith = function(algo) {
   return function(value) {
@@ -15,7 +15,7 @@ exports.hashWith = function(algo) {
 
 const generatePrivateKey = function(bytes) {
   const privateKey = crypto.randomBytes(bytes)
-  if (secp256k1.privateKeyVerify(privateKey)) {
+  if (getSecp256k1().privateKeyVerify(privateKey)) {
     return privateKey
   }
 
@@ -29,7 +29,7 @@ exports.createPrivateKey = function(bytes) {
 }
 
 exports.derivePublicKey = function(privateKey) {
-  return secp256k1.publicKeyCreate(privateKey)
+  return getSecp256k1().publicKeyCreate(privateKey)
 }
 
 exports.signFn = function(success) {
@@ -37,7 +37,7 @@ exports.signFn = function(success) {
     return function(privateKey) {
       return function(message) {
         try {
-          const ret = secp256k1.sign(Buffer.from(message, "hex"), privateKey)
+          const ret = getSecp256k1().sign(Buffer.from(message, "hex"), privateKey)
           return success(ret.signature)
         } catch (e) {
           return failure
@@ -51,7 +51,7 @@ exports.verify = function(publicKey) {
   return function(signature) {
     return function(message) {
       try {
-        return secp256k1.verify(
+        return getSecp256k1().verify(
           Buffer.from(message, "hex"),
           signature,
           publicKey
@@ -72,7 +72,7 @@ exports.encodeWith = function(success) {
     return function(encoding) {
       return function(value) {
         try {
-          const ret = baseX(encoding).encode(Buffer.from(value, "hex"))
+          const ret = getBasex()(encoding).encode(Buffer.from(value, "hex"))
           return success(ret)
         } catch (e) {
           return failure
@@ -87,7 +87,7 @@ exports.decodeWith = function(success) {
     return function(encoding) {
       return function(value) {
         try {
-          const ret = baseX(encoding)
+          const ret = getBasex()(encoding)
             .decode(value)
             .toString("hex")
           return success(ret)
@@ -97,4 +97,19 @@ exports.decodeWith = function(success) {
       }
     }
   }
+}
+
+
+// dirty trick to lazy load dependencies
+function lazyLoad(pkg) {
+  var fn = function() {
+    const loaded = require(pkg)
+    fn = function() {
+      return loaded
+    }
+
+    return fn()
+  }
+
+  return fn
 }

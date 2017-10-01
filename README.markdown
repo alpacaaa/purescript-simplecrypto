@@ -18,6 +18,7 @@ A set of useful cryptographic utilities for blockchain development.
 
 `bower install --save purescript-simplecrypto`
 
+##### Extra dependencies
 You will also need to pull down a couple of packages from npm.
 
 `npm install --save secp256k1 base-x`
