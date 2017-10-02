@@ -78,7 +78,7 @@ main = do
 ```haskell
 import Node.FS.Sync (writeFile, readFile)
 
-sameKey key1 key2 = "Are they the same?: " <> show (key1 == key2)
+sameKey key1 key2 = if key1 == key2 then "They are the same!" else "Wait, what."
 
 main = do
   { private } <- Crypto.generateKeyPair
