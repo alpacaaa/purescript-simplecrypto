@@ -39,6 +39,10 @@ main = do
   let verify = Crypto.verify pair.public signature msg
   assert (verify == true)
 
+  let exportedSig = Crypto.exportToBuffer signature
+  let importedSig = try (Crypto.importFromBuffer exportedSig) :: Crypto.Signature
+  assert (show signature == show importedSig)
+
   let encoded = try (Crypto.baseEncode Crypto.BASE58 msg)
   log ("Encoded base58: " <> show encoded)
 

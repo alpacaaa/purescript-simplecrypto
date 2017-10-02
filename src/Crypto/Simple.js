@@ -83,6 +83,23 @@ exports.verify = function(publicKey) {
   }
 }
 
+exports.signatureExport = function(signature) {
+  return getSecp256k1().signatureExport(signature)
+}
+
+exports.signatureImport = function(success) {
+  return function(failure) {
+    return function(buffer) {
+      try {
+        const ret = getSecp256k1().signatureImport(buffer)
+        return success(ret)
+      } catch (e) {
+        return failure
+      }
+    }
+  }
+}
+
 exports.bufferToHex = function(buffer) {
   return buffer.toString("hex")
 }

@@ -29,6 +29,8 @@ foreign import createPrivateKey :: forall e. Int -> Eff (e) PrivateKey
 foreign import derivePublicKey  :: PrivateKey -> PublicKey
 foreign import privateKeyExport :: PrivateKey -> Node.Buffer
 foreign import privateKeyImport :: forall a. (PrivateKey -> Maybe PrivateKey) -> Maybe a -> Node.Buffer -> Maybe PrivateKey
+foreign import signatureExport  :: Signature -> Node.Buffer
+foreign import signatureImport  :: forall a. (Signature -> Maybe Signature) -> Maybe a -> Node.Buffer -> Maybe Signature
 foreign import signFn           :: forall a. (Signature -> Maybe Signature) -> Maybe a -> PrivateKey -> String -> Maybe Signature
 foreign import verify           :: PublicKey -> Signature -> String -> Boolean
 foreign import encodeWith       :: forall a. (EncodeData -> Maybe EncodeData) -> Maybe a -> Alphabet -> String -> Maybe EncodeData
@@ -69,6 +71,10 @@ class Serialize a where
 instance serializePrivateKey :: Serialize PrivateKey where
   exportToBuffer   = privateKeyExport
   importFromBuffer = privateKeyImport Just Nothing
+
+instance serializeSignature :: Serialize Signature where
+  exportToBuffer   = signatureExport
+  importFromBuffer = signatureImport Just Nothing
 
 generateKeyPair :: forall e. Eff (e) KeyPair
 generateKeyPair = do
