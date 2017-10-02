@@ -1,22 +1,22 @@
 module Crypto.Simple
-  ( generateKeyPair
-  , hash
-  , sign
-  , verify
+  ( hash
   , baseEncode
   , baseDecode
+  , generateKeyPair
   , createPrivateKey
   , derivePublicKey
+  , sign
+  , verify
+  , exportToBuffer
+  , importFromBuffer
+  , Hash(..)
+  , BaseEncoding(..)
   , PrivateKey
   , PublicKey
   , Signature
   , EncodeData
   , KeyPair
-  , Hash(..)
-  , BaseEncoding(..)
   , class Serialize
-  , exportToBuffer
-  , importFromBuffer
   ) where
 
 import Prelude
