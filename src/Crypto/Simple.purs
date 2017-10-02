@@ -14,15 +14,21 @@ module Crypto.Simple
   , KeyPair
   , Hash(..)
   , BaseEncoding(..)
+  , class Serialize
+  , exportToBuffer
+  , importFromBuffer
   ) where
 
 import Prelude
 import Control.Monad.Eff (Eff)
 import Data.Maybe (Maybe(..))
+import Node.Buffer as Node
 
 foreign import hashWith         :: HashAlgorithm -> String -> String
 foreign import createPrivateKey :: forall e. Int -> Eff (e) PrivateKey
 foreign import derivePublicKey  :: PrivateKey -> PublicKey
+foreign import privateKeyExport :: PrivateKey -> Node.Buffer
+foreign import privateKeyImport :: forall a. (PrivateKey -> Maybe PrivateKey) -> Maybe a -> Node.Buffer -> Maybe PrivateKey
 foreign import signFn           :: forall a. (Signature -> Maybe Signature) -> Maybe a -> PrivateKey -> String -> Maybe Signature
 foreign import verify           :: PublicKey -> Signature -> String -> Boolean
 foreign import encodeWith       :: forall a. (EncodeData -> Maybe EncodeData) -> Maybe a -> Alphabet -> String -> Maybe EncodeData
@@ -56,6 +62,13 @@ instance showSignature :: Show Signature where
 instance showEncodeData :: Show EncodeData where
   show = bufferToHex
 
+class Serialize a where
+  exportToBuffer   :: a -> Node.Buffer
+  importFromBuffer :: Node.Buffer -> Maybe a
+
+instance serializePrivateKey :: Serialize PrivateKey where
+  exportToBuffer   = privateKeyExport
+  importFromBuffer = privateKeyImport Just Nothing
 
 generateKeyPair :: forall e. Eff (e) KeyPair
 generateKeyPair = do

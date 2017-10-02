@@ -1,7 +1,7 @@
 "use strict"
 
-const crypto       = require("crypto")
-const getBasex     = lazyLoad("base-x")
+const crypto = require("crypto")
+const getBasex = lazyLoad("base-x")
 const getSecp256k1 = lazyLoad("secp256k1")
 
 exports.hashWith = function(algo) {
@@ -32,12 +32,32 @@ exports.derivePublicKey = function(privateKey) {
   return getSecp256k1().publicKeyCreate(privateKey)
 }
 
+exports.privateKeyExport = function(privateKey) {
+  return getSecp256k1().privateKeyExport(privateKey)
+}
+
+exports.privateKeyImport = function(success) {
+  return function(failure) {
+    return function(buffer) {
+      try {
+        const ret = getSecp256k1().privateKeyImport(buffer)
+        return success(ret)
+      } catch (e) {
+        return failure
+      }
+    }
+  }
+}
+
 exports.signFn = function(success) {
   return function(failure) {
     return function(privateKey) {
       return function(message) {
         try {
-          const ret = getSecp256k1().sign(Buffer.from(message, "hex"), privateKey)
+          const ret = getSecp256k1().sign(
+            Buffer.from(message, "hex"),
+            privateKey
+          )
           return success(ret.signature)
         } catch (e) {
           return failure
@@ -98,7 +118,6 @@ exports.decodeWith = function(success) {
     }
   }
 }
-
 
 // dirty trick to lazy load dependencies
 function lazyLoad(pkg) {

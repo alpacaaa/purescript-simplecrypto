@@ -29,6 +29,10 @@ main = do
   pair <- Crypto.generateKeyPair
   assert $ stringLength (show pair.private) == 64
 
+  let exported = Crypto.exportToBuffer pair.private
+  let imported = try (Crypto.importFromBuffer exported) :: Crypto.PrivateKey
+  assert (show pair.private == show imported)
+
   let signature = try (Crypto.sign pair.private msg)
   log ("Signature: " <> show signature)
 
