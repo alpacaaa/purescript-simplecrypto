@@ -31,7 +31,7 @@ main = do
 
   let exported = Crypto.exportToBuffer pair.private
   let imported = try (Crypto.importFromBuffer exported) :: Crypto.PrivateKey
-  assert (show pair.private == show imported)
+  assert (pair.private == imported)
 
   let signature = try (Crypto.sign pair.private msg)
   log ("Signature: " <> show signature)
@@ -41,7 +41,7 @@ main = do
 
   let exportedSig = Crypto.exportToBuffer signature
   let importedSig = try (Crypto.importFromBuffer exportedSig) :: Crypto.Signature
-  assert (show signature == show importedSig)
+  assert (signature == importedSig)
 
   let encoded = try (Crypto.baseEncode Crypto.BASE58 msg)
   log ("Encoded base58: " <> show encoded)

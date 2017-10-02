@@ -64,6 +64,15 @@ instance showSignature :: Show Signature where
 instance showEncodeData :: Show EncodeData where
   show = bufferToHex
 
+instance eqPrivateKey :: Eq PrivateKey where
+  eq a b = (bufferToHex a) == (bufferToHex b)
+
+instance eqPublicKey :: Eq PublicKey where
+  eq a b = (bufferToHex a) == (bufferToHex b)
+
+instance eqSignature :: Eq Signature where
+  eq a b = (bufferToHex a) == (bufferToHex b)
+
 class Serialize a where
   exportToBuffer   :: a -> Node.Buffer
   importFromBuffer :: Node.Buffer -> Maybe a
