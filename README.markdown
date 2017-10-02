@@ -74,6 +74,26 @@ main = do
 ```
 
 
+##### Import/Export of keys and signatures
+```haskell
+import Node.FS.Sync (writeFile, readFile)
+
+sameKey key1 key2 = "Are they the same?: " <> show (key1 == key2)
+
+main = do
+  { private } <- Crypto.generateKeyPair
+
+  -- it works exactly the same for signatures
+  let exported = Crypto.exportToBuffer private
+
+  writeFile "privatekey" exported
+  contents <- readFile "privatekey"
+
+  let imported = Crypto.importFromBuffer contents :: Maybe Crypto.PrivateKey
+  log $ maybe "Something went wrong" (sameKey private) imported
+```
+
+
 ##### Generating a compressed Bitcoin address
 ```haskell
 btcAddress :: Crypto.PublicKey -> Maybe Crypto.EncodeData
