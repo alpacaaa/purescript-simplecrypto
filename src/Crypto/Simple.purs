@@ -36,6 +36,7 @@ foreign import verify           :: PublicKey -> Signature -> String -> Boolean
 foreign import encodeWith       :: forall a. (EncodeData -> Maybe EncodeData) -> Maybe a -> Alphabet -> String -> Maybe EncodeData
 foreign import decodeWith       :: forall a. (String -> Maybe String) -> Maybe a -> Alphabet -> EncodeData -> Maybe String
 foreign import bufferToHex      :: forall a. a -> String
+foreign import coerceBuffer     :: forall a b. a -> b
 
 data PrivateKey
 data PublicKey
@@ -80,6 +81,10 @@ class Serialize a where
 instance serializePrivateKey :: Serialize PrivateKey where
   exportToBuffer   = privateKeyExport
   importFromBuffer = privateKeyImport Just Nothing
+
+instance serializePublicKey :: Serialize PublicKey where
+  exportToBuffer buffer   = coerceBuffer buffer
+  importFromBuffer buffer = Just (coerceBuffer buffer)
 
 instance serializeSignature :: Serialize Signature where
   exportToBuffer   = signatureExport

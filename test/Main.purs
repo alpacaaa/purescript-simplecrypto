@@ -21,6 +21,13 @@ btcAddress pk = show pk
   # Crypto.hash Crypto.RIPEMD160
   # Crypto.baseEncode Crypto.BASE58
 
+importExportTest :: forall a. (Crypto.Serialize a) => a -> a
+importExportTest value =
+  let
+    exported = Crypto.exportToBuffer value
+  in
+  try (Crypto.importFromBuffer exported)
+
 main :: forall e. Eff (console :: CONSOLE, assert :: ASSERT | e) Unit
 main = do
   let msg = Crypto.hash Crypto.SHA256 "some msg"
@@ -29,9 +36,8 @@ main = do
   pair <- Crypto.generateKeyPair
   assert $ stringLength (show pair.private) == 64
 
-  let exported = Crypto.exportToBuffer pair.private
-  let imported = try (Crypto.importFromBuffer exported) :: Crypto.PrivateKey
-  assert (pair.private == imported)
+  assert (pair.private == importExportTest pair.private)
+  assert (pair.public == importExportTest pair.public)
 
   let signature = try (Crypto.sign pair.private msg)
   log ("Signature: " <> show signature)
@@ -39,9 +45,7 @@ main = do
   let verify = Crypto.verify pair.public signature msg
   assert (verify == true)
 
-  let exportedSig = Crypto.exportToBuffer signature
-  let importedSig = try (Crypto.importFromBuffer exportedSig) :: Crypto.Signature
-  assert (signature == importedSig)
+  assert (signature == importExportTest signature)
 
   let encoded = try (Crypto.baseEncode Crypto.BASE58 msg)
   log ("Encoded base58: " <> show encoded)
