@@ -54,17 +54,20 @@ newtype Alphabet = Alphabet String
 
 newtype HashAlgorithm = HashAlgorithm String
 
+bufferEq :: forall a. (Serialize a) => a -> a -> Boolean
+bufferEq a b = (bufferToHex a) == (bufferToHex b)
+
 instance eqPrivateKey :: Eq PrivateKey where
-  eq a b = (bufferToHex a) == (bufferToHex b)
+  eq = bufferEq
 
 instance eqPublicKey :: Eq PublicKey where
-  eq a b = (bufferToHex a) == (bufferToHex b)
+  eq = bufferEq
 
 instance eqSignature :: Eq Signature where
-  eq a b = (bufferToHex a) == (bufferToHex b)
+  eq = bufferEq
 
 instance eqEncodeData :: Eq EncodeData where
-  eq a b = (bufferToHex a) == (bufferToHex b)
+  eq = bufferEq
 
 class Serialize a where
   exportToBuffer   :: a -> Node.Buffer
@@ -77,9 +80,9 @@ instance serializePrivateKey :: Serialize PrivateKey where
   toString         = bufferToHex
 
 instance serializePublicKey :: Serialize PublicKey where
-  exportToBuffer buffer   = coerceBuffer buffer
-  importFromBuffer buffer = Just (coerceBuffer buffer)
-  toString                = bufferToHex
+  exportToBuffer   = coerceBuffer
+  importFromBuffer = Just <<< coerceBuffer
+  toString         = bufferToHex
 
 instance serializeSignature :: Serialize Signature where
   exportToBuffer   = signatureExport
@@ -87,9 +90,9 @@ instance serializeSignature :: Serialize Signature where
   toString         = bufferToHex
 
 instance serializeEncodeData :: Serialize EncodeData where
-  exportToBuffer buffer   = coerceBuffer buffer
-  importFromBuffer buffer = Just (coerceBuffer buffer)
-  toString                = bufferToHex
+  exportToBuffer   = coerceBuffer
+  importFromBuffer = Just <<< coerceBuffer
+  toString         = bufferToHex
 
 generateKeyPair :: forall e. Eff (e) KeyPair
 generateKeyPair = do
