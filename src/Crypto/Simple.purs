@@ -9,6 +9,7 @@ module Crypto.Simple
   , verify
   , exportToBuffer
   , importFromBuffer
+  , toString
   , Hash(..)
   , BaseEncoding(..)
   , PrivateKey
@@ -53,18 +54,6 @@ newtype Alphabet = Alphabet String
 
 newtype HashAlgorithm = HashAlgorithm String
 
-instance showPrivateKey :: Show PrivateKey where
-  show = bufferToHex
-
-instance showPublicKey :: Show PublicKey where
-  show = bufferToHex
-
-instance showSignature :: Show Signature where
-  show = bufferToHex
-
-instance showEncodeData :: Show EncodeData where
-  show = bufferToHex
-
 instance eqPrivateKey :: Eq PrivateKey where
   eq a b = (bufferToHex a) == (bufferToHex b)
 
@@ -74,21 +63,33 @@ instance eqPublicKey :: Eq PublicKey where
 instance eqSignature :: Eq Signature where
   eq a b = (bufferToHex a) == (bufferToHex b)
 
+instance eqEncodeData :: Eq EncodeData where
+  eq a b = (bufferToHex a) == (bufferToHex b)
+
 class Serialize a where
   exportToBuffer   :: a -> Node.Buffer
   importFromBuffer :: Node.Buffer -> Maybe a
+  toString         :: a -> String
 
 instance serializePrivateKey :: Serialize PrivateKey where
   exportToBuffer   = privateKeyExport
   importFromBuffer = privateKeyImport Just Nothing
+  toString         = bufferToHex
 
 instance serializePublicKey :: Serialize PublicKey where
   exportToBuffer buffer   = coerceBuffer buffer
   importFromBuffer buffer = Just (coerceBuffer buffer)
+  toString                = bufferToHex
 
 instance serializeSignature :: Serialize Signature where
   exportToBuffer   = signatureExport
   importFromBuffer = signatureImport Just Nothing
+  toString         = bufferToHex
+
+instance serializeEncodeData :: Serialize EncodeData where
+  exportToBuffer buffer   = coerceBuffer buffer
+  importFromBuffer buffer = Just (coerceBuffer buffer)
+  toString                = bufferToHex
 
 generateKeyPair :: forall e. Eff (e) KeyPair
 generateKeyPair = do

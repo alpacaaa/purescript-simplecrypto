@@ -15,7 +15,7 @@ try :: forall a. Maybe a -> a
 try a = unsafePartial $ fromJust a
 
 btcAddress :: Crypto.PublicKey -> Maybe Crypto.EncodeData
-btcAddress pk = show pk
+btcAddress pk = Crypto.toString pk
   # Crypto.hash Crypto.SHA256
   # Crypto.hash Crypto.SHA256
   # Crypto.hash Crypto.RIPEMD160
@@ -34,13 +34,13 @@ main = do
   assert (stringLength msg == 64)
 
   pair <- Crypto.generateKeyPair
-  assert $ stringLength (show pair.private) == 64
+  assert $ stringLength (Crypto.toString pair.private) == 64
 
   assert (pair.private == importExportTest pair.private)
   assert (pair.public == importExportTest pair.public)
 
   let signature = try (Crypto.sign pair.private msg)
-  log ("Signature: " <> show signature)
+  log ("Signature: " <> Crypto.toString signature)
 
   let verify = Crypto.verify pair.public signature msg
   assert (verify == true)
@@ -48,10 +48,12 @@ main = do
   assert (signature == importExportTest signature)
 
   let encoded = try (Crypto.baseEncode Crypto.BASE58 msg)
-  log ("Encoded base58: " <> show encoded)
+  log ("Encoded base58: " <> Crypto.toString encoded)
+
+  assert (encoded == importExportTest encoded)
 
   let decoded = try (Crypto.baseDecode Crypto.BASE58 encoded)
   assert (decoded == msg)
 
   let address = try (btcAddress pair.public)
-  log ("BTC address: " <> show address)
+  log ("BTC address: " <> Crypto.toString address)
