@@ -78,14 +78,21 @@ class Serializable a where
   importFromBuffer :: Node.Buffer -> Maybe a
   toString         :: a -> String
 
+importKey :: forall a. (Node.Buffer -> Boolean) -> (Node.Buffer -> a) -> Node.Buffer -> Maybe a
+importKey verifier tagger buff =
+  if verifier buff then
+    Just (tagger buff)
+  else
+    Nothing
+
 instance serializablePrivateKey :: Serializable PrivateKey where
   exportToBuffer (PrivateKey buff)  = buff
-  importFromBuffer buff = if verifyPrivateKey buff then Just (PrivateKey buff) else Nothing
+  importFromBuffer = importKey verifyPrivateKey PrivateKey
   toString (PrivateKey buff) = bufferToHex buff
 
 instance serializablePublicKey :: Serializable PublicKey where
   exportToBuffer (PublicKey buff)  = buff
-  importFromBuffer buff = if verifyPublicKey buff then Just (PublicKey buff) else Nothing
+  importFromBuffer = importKey verifyPublicKey PublicKey
   toString (PublicKey buff) = bufferToHex buff
 
 instance serializableSignature :: Serializable Signature where
@@ -171,7 +178,8 @@ baseEncode encType content =
   map EncodeData maybeBuff
 
 baseDecode :: BaseEncoding -> EncodeData -> Maybe String
-baseDecode encType (EncodeData encoded) = decodeWith Just Nothing (baseAlphabet encType) encoded
+baseDecode encType (EncodeData encoded) =
+  decodeWith Just Nothing (baseAlphabet encType) encoded
 
 baseAlphabet :: BaseEncoding -> Alphabet
 baseAlphabet BASE58 = Alphabet "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
