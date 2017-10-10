@@ -39,7 +39,7 @@ foreign import signFn           :: forall a. (Node.Buffer -> Maybe Node.Buffer) 
 foreign import verifyFn         :: Node.Buffer -> Node.Buffer -> Node.Buffer -> Boolean
 foreign import encodeWith       :: forall a. (Node.Buffer -> Maybe Node.Buffer) -> Maybe a -> Alphabet -> String -> Maybe Node.Buffer
 foreign import decodeWith       :: forall a. (String -> Maybe String) -> Maybe a -> Alphabet -> Node.Buffer -> Maybe String
-foreign import bufferToHex      :: forall a. a -> String
+foreign import bufferToHex      :: Node.Buffer -> String
 foreign import verifyPrivateKey :: Node.Buffer -> Boolean
 foreign import verifyPublicKey  :: Node.Buffer -> Boolean
 
@@ -60,8 +60,6 @@ newtype Alphabet = Alphabet String
 
 newtype HashAlgorithm = HashAlgorithm String
 
-bufferEq :: forall a. (Serializable a) => a -> a -> Boolean
-bufferEq a b = (bufferToHex a) == (bufferToHex b)
 
 instance eqPrivateKey :: Eq PrivateKey where
   eq (PrivateKey a) (PrivateKey b) = (bufferToHex a) == (bufferToHex b)
