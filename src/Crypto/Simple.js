@@ -40,7 +40,7 @@ exports.createPrivateKey = function(bytes) {
   }
 }
 
-exports.derivePublicKey = function(privateKey) {
+exports.deriveKeyNative = function(privateKey) {
   return getSecp256k1().publicKeyCreate(privateKey, false)
 }
 

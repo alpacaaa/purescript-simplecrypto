@@ -29,29 +29,28 @@ import Node.Buffer as Node
 
 foreign import hashBufferNative :: HashAlgorithm -> Node.Buffer -> Node.Buffer
 foreign import hashStringNative :: HashAlgorithm -> String -> Node.Buffer
-foreign import createPrivateKey :: forall e. Int -> Eff (e) PrivateKey
-foreign import derivePublicKey  :: PrivateKey -> Node.Buffer
+foreign import createPrivateKey :: forall e. Int -> Eff (e) Node.Buffer
+foreign import deriveKeyNative  :: Node.Buffer -> Node.Buffer
 foreign import privateKeyExport :: PrivateKey -> Node.Buffer
 foreign import privateKeyImport :: forall a. (PrivateKey -> Maybe PrivateKey) -> Maybe a -> Node.Buffer -> Maybe PrivateKey
 foreign import signatureExport  :: Signature -> Node.Buffer
 foreign import signatureImport  :: forall a. (Signature -> Maybe Signature) -> Maybe a -> Node.Buffer -> Maybe Signature
-foreign import signFn           :: forall a. (Node.Buffer -> Maybe Node.Buffer) -> Maybe a -> PrivateKey -> Node.Buffer -> Maybe Node.Buffer
+foreign import signFn           :: forall a. (Node.Buffer -> Maybe Node.Buffer) -> Maybe a -> Node.Buffer -> Node.Buffer -> Maybe Node.Buffer
 foreign import verifyFn         :: Node.Buffer -> Node.Buffer -> Node.Buffer -> Boolean
 foreign import encodeWith       :: forall a. (Node.Buffer -> Maybe Node.Buffer) -> Maybe a -> Alphabet -> String -> Maybe Node.Buffer
 foreign import decodeWith       :: forall a. (String -> Maybe String) -> Maybe a -> Alphabet -> Node.Buffer -> Maybe String
 foreign import bufferToHex      :: forall a. a -> String
-foreign import coerceBuffer     :: forall a b. a -> b
-foreign import verifyPrivateKey :: PrivateKey -> Boolean
+foreign import verifyPrivateKey :: Node.Buffer -> Boolean
 foreign import verifyPublicKey  :: Node.Buffer -> Boolean
 
-data PrivateKey
+data PrivateKey = PrivateKey Node.Buffer
 data PublicKey  = PublicKey Node.Buffer
 data Signature  = Signature Node.Buffer
 data EncodeData = EncodeData Node.Buffer
+data Digest     = Digest Node.Buffer
 
 type KeyPair = { private :: PrivateKey, public :: PublicKey }
 
-data Digest = Digest Node.Buffer
 
 data Hash = SHA1 | SHA256 | SHA512 | RIPEMD160
 
@@ -65,7 +64,7 @@ bufferEq :: forall a. (Serializable a) => a -> a -> Boolean
 bufferEq a b = (bufferToHex a) == (bufferToHex b)
 
 instance eqPrivateKey :: Eq PrivateKey where
-  eq = bufferEq
+  eq (PrivateKey a) (PrivateKey b) = (bufferToHex a) == (bufferToHex b)
 
 instance eqPublicKey :: Eq PublicKey where
   eq (PublicKey a) (PublicKey b) = (bufferToHex a) == (bufferToHex b)
@@ -81,17 +80,10 @@ class Serializable a where
   importFromBuffer :: Node.Buffer -> Maybe a
   toString         :: a -> String
 
-bufferToKey :: forall a. (a -> Boolean) -> Node.Buffer -> Maybe a
-bufferToKey verifier buff =
-  let
-    key = coerceBuffer buff
-  in
-  if verifier key then Just key else Nothing
-
 instance serializablePrivateKey :: Serializable PrivateKey where
-  exportToBuffer   = coerceBuffer
-  importFromBuffer = bufferToKey verifyPrivateKey
-  toString         = bufferToHex
+  exportToBuffer (PrivateKey buff)  = buff
+  importFromBuffer buff = if verifyPrivateKey buff then Just (PrivateKey buff) else Nothing
+  toString (PrivateKey buff) = bufferToHex buff
 
 instance serializablePublicKey :: Serializable PublicKey where
   exportToBuffer (PublicKey buff)  = buff
@@ -109,8 +101,8 @@ instance serializableEncodeData :: Serializable EncodeData where
   toString (EncodeData buff) = bufferToHex buff
 
 instance serializableDigest :: Serializable Digest where
-  exportToBuffer (Digest buff) = coerceBuffer buff
-  importFromBuffer             = Just <<< Digest <<< coerceBuffer
+  exportToBuffer (Digest buff) = buff
+  importFromBuffer             = Just <<< Digest
   toString (Digest buff)       = bufferToHex buff
 
 class Hashable a where
@@ -121,7 +113,8 @@ hashBuffer hashType value =
   let
     buff = exportToBuffer value
     hash = hashBufferNative (hashToAlgo hashType) buff
-  in Digest (coerceBuffer hash)
+  in
+  Digest hash
 
 instance hashableString :: Hashable String where
   hash hashType value = Digest $ hashStringNative (hashToAlgo hashType) value
@@ -146,9 +139,14 @@ instance hashableBuffer :: Hashable Node.Buffer where
 
 generateKeyPair :: forall e. Eff (e) KeyPair
 generateKeyPair = do
-  private <- createPrivateKey 32
-  let public = PublicKey (derivePublicKey private)
+  key <- createPrivateKey 32
+  let private = PrivateKey key
+  let public  = derivePublicKey private
+
   pure { private, public }
+
+derivePublicKey :: PrivateKey -> PublicKey
+derivePublicKey (PrivateKey key) = PublicKey (deriveKeyNative key)
 
 hashToAlgo :: Hash -> HashAlgorithm
 hashToAlgo SHA1      = HashAlgorithm "sha1"
@@ -157,9 +155,9 @@ hashToAlgo SHA512    = HashAlgorithm "sha512"
 hashToAlgo RIPEMD160 = HashAlgorithm "ripemd160"
 
 sign :: PrivateKey -> Digest -> Maybe Signature
-sign pk value = 
+sign (PrivateKey key) value = 
   let
-    maybeBuff = signFn Just Nothing pk (exportToBuffer value)
+    maybeBuff = signFn Just Nothing key (exportToBuffer value)
   in
   map Signature maybeBuff
 

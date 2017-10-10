@@ -30,7 +30,7 @@ btcAddressTest :: forall e. String -> Eff (console :: CONSOLE, assert :: ASSERT,
 btcAddressTest key = do
   buff <- Buffer.fromString key Encoding.Hex
   let private = try (Crypto.importFromBuffer buff) :: Crypto.PrivateKey
-  let ripemd  = Crypto.derivePublicKey private 
+  let ripemd  = Crypto.derivePublicKey private
               # Crypto.hash Crypto.SHA256
               # Crypto.hash Crypto.RIPEMD160
 
