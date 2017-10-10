@@ -30,22 +30,22 @@ import Node.Buffer as Node
 foreign import hashBufferNative :: HashAlgorithm -> Node.Buffer -> Node.Buffer
 foreign import hashStringNative :: HashAlgorithm -> String -> Node.Buffer
 foreign import createPrivateKey :: forall e. Int -> Eff (e) PrivateKey
-foreign import derivePublicKey  :: PrivateKey -> PublicKey
+foreign import derivePublicKey  :: PrivateKey -> Node.Buffer
 foreign import privateKeyExport :: PrivateKey -> Node.Buffer
 foreign import privateKeyImport :: forall a. (PrivateKey -> Maybe PrivateKey) -> Maybe a -> Node.Buffer -> Maybe PrivateKey
 foreign import signatureExport  :: Signature -> Node.Buffer
 foreign import signatureImport  :: forall a. (Signature -> Maybe Signature) -> Maybe a -> Node.Buffer -> Maybe Signature
 foreign import signFn           :: forall a. (Node.Buffer -> Maybe Node.Buffer) -> Maybe a -> PrivateKey -> Node.Buffer -> Maybe Node.Buffer
-foreign import verifyFn         :: PublicKey -> Node.Buffer -> Node.Buffer -> Boolean
+foreign import verifyFn         :: Node.Buffer -> Node.Buffer -> Node.Buffer -> Boolean
 foreign import encodeWith       :: forall a. (Node.Buffer -> Maybe Node.Buffer) -> Maybe a -> Alphabet -> String -> Maybe Node.Buffer
 foreign import decodeWith       :: forall a. (String -> Maybe String) -> Maybe a -> Alphabet -> Node.Buffer -> Maybe String
 foreign import bufferToHex      :: forall a. a -> String
 foreign import coerceBuffer     :: forall a b. a -> b
 foreign import verifyPrivateKey :: PrivateKey -> Boolean
-foreign import verifyPublicKey  :: PublicKey -> Boolean
+foreign import verifyPublicKey  :: Node.Buffer -> Boolean
 
 data PrivateKey
-data PublicKey
+data PublicKey  = PublicKey Node.Buffer
 data Signature  = Signature Node.Buffer
 data EncodeData = EncodeData Node.Buffer
 
@@ -68,7 +68,7 @@ instance eqPrivateKey :: Eq PrivateKey where
   eq = bufferEq
 
 instance eqPublicKey :: Eq PublicKey where
-  eq = bufferEq
+  eq (PublicKey a) (PublicKey b) = (bufferToHex a) == (bufferToHex b)
 
 instance eqSignature :: Eq Signature where
   eq (Signature a) (Signature b) = (bufferToHex a) == (bufferToHex b)
@@ -94,9 +94,9 @@ instance serializablePrivateKey :: Serializable PrivateKey where
   toString         = bufferToHex
 
 instance serializablePublicKey :: Serializable PublicKey where
-  exportToBuffer   = coerceBuffer
-  importFromBuffer = bufferToKey verifyPublicKey
-  toString         = bufferToHex
+  exportToBuffer (PublicKey buff)  = buff
+  importFromBuffer buff = if verifyPublicKey buff then Just (PublicKey buff) else Nothing
+  toString (PublicKey buff) = bufferToHex buff
 
 instance serializableSignature :: Serializable Signature where
   exportToBuffer (Signature buff)  = buff
@@ -147,7 +147,7 @@ instance hashableBuffer :: Hashable Node.Buffer where
 generateKeyPair :: forall e. Eff (e) KeyPair
 generateKeyPair = do
   private <- createPrivateKey 32
-  let public = derivePublicKey private
+  let public = PublicKey (derivePublicKey private)
   pure { private, public }
 
 hashToAlgo :: Hash -> HashAlgorithm
@@ -164,7 +164,8 @@ sign pk value =
   map Signature maybeBuff
 
 verify :: PublicKey -> Signature -> Digest -> Boolean
-verify key (Signature signature) value = verifyFn key signature (exportToBuffer value)
+verify (PublicKey key) (Signature signature) value =
+  verifyFn key signature (exportToBuffer value)
 
 baseEncode :: BaseEncoding -> String -> Maybe EncodeData
 baseEncode encType content =
