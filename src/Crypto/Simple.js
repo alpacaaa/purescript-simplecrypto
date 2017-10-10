@@ -116,10 +116,6 @@ exports.bufferToHex = function(buffer) {
   return buffer.toString("hex")
 }
 
-exports.coerceBuffer = function(buffer) {
-  return buffer
-}
-
 exports.encodeWith = function(success) {
   return function(failure) {
     return function(encoding) {
