@@ -21,6 +21,7 @@
     "purescript-unsafe-coerce": "^3.0.0",
     "purescript-console": "^3.0.0",
     "purescript-assert": "^3.0.0",
-    "purescript-partial": "^1.2.1"
+    "purescript-partial": "^1.2.1",
+    "purescript-strings": "^3.3.1"
   }
 }

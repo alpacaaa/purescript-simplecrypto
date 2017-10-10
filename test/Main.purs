@@ -1,40 +1,58 @@
 module Test.Main where
 
 import Prelude
+
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
+import Crypto.Simple as Crypto
 import Data.Maybe (Maybe, fromJust)
+import Data.String as String
+import Node.Buffer (BUFFER)
+import Node.Buffer as Buffer
+import Node.Encoding as Encoding
 import Partial.Unsafe (unsafePartial)
 import Test.Assert (assert, ASSERT)
 
-import Crypto.Simple as Crypto
-
-foreign import stringLength :: String -> Int -- really?
+hashLength :: forall a. (Crypto.Serializable a) => a -> Int
+hashLength = String.length <<< Crypto.toString
 
 try :: forall a. Maybe a -> a
 try a = unsafePartial $ fromJust a
 
-btcAddress :: Crypto.PublicKey -> Maybe Crypto.EncodeData
-btcAddress pk = Crypto.toString pk
-  # Crypto.hash Crypto.SHA256
-  # Crypto.hash Crypto.SHA256
-  # Crypto.hash Crypto.RIPEMD160
-  # Crypto.baseEncode Crypto.BASE58
-
-importExportTest :: forall a. (Crypto.Serialize a) => a -> a
+importExportTest :: forall a. (Crypto.Serializable a) => a -> a
 importExportTest value =
   let
     exported = Crypto.exportToBuffer value
   in
   try (Crypto.importFromBuffer exported)
 
-main :: forall e. Eff (console :: CONSOLE, assert :: ASSERT | e) Unit
+btcAddressTest :: forall e. String -> Eff (console :: CONSOLE, assert :: ASSERT, buffer :: BUFFER | e) String
+btcAddressTest key = do
+  buff <- Buffer.fromString key Encoding.Hex
+  let private = try (Crypto.importFromBuffer buff) :: Crypto.PrivateKey
+  let ripemd  = Crypto.derivePublicKey private 
+              # Crypto.hash Crypto.SHA256
+              # Crypto.hash Crypto.RIPEMD160
+
+  let versionedHex = "00" <> (Crypto.toString ripemd)
+
+  versioned <- Buffer.fromString versionedHex Encoding.Hex
+  let checksum  = Crypto.hash Crypto.SHA256 versioned
+                # Crypto.hash Crypto.SHA256
+                # Crypto.toString
+                # String.take 8
+
+  let address = try $ Crypto.baseEncode Crypto.BASE58 (versionedHex <> checksum)
+  pure (Crypto.toString address)
+
+
+main :: forall e. Eff (console :: CONSOLE, assert :: ASSERT, buffer :: BUFFER | e) Unit
 main = do
   let msg = Crypto.hash Crypto.SHA256 "some msg"
-  assert (stringLength msg == 64)
+  assert (hashLength msg == 64)
 
   pair <- Crypto.generateKeyPair
-  assert $ stringLength (Crypto.toString pair.private) == 64
+  assert $ (hashLength pair.private) == 64
 
   assert (pair.private == importExportTest pair.private)
   assert (pair.public == importExportTest pair.public)
@@ -47,13 +65,14 @@ main = do
 
   assert (signature == importExportTest signature)
 
-  let encoded = try (Crypto.baseEncode Crypto.BASE58 msg)
+  let encoded = try $ Crypto.baseEncode Crypto.BASE58 (Crypto.toString msg)
   log ("Encoded base58: " <> Crypto.toString encoded)
 
   assert (encoded == importExportTest encoded)
 
   let decoded = try (Crypto.baseDecode Crypto.BASE58 encoded)
-  assert (decoded == msg)
+  assert (decoded == Crypto.toString msg)
 
-  let address = try (btcAddress pair.public)
-  log ("BTC address: " <> Crypto.toString address)
+  address <- btcAddressTest "18E14A7B6A307F426A94F8114701E7C8E774E7F9A47E2C2035DB29A206321725"
+  log ("BTC address: " <> address)
+  assert (address == "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM")

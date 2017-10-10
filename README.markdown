@@ -68,9 +68,12 @@ main = do
 ```haskell
 main = do
   let msg     = Crypto.hash Crypto.SHA256 "purescript ftw"
+              # Crypto.toString
+
   let encoded = Crypto.baseEncode Crypto.BASE58 msg
-  let decoded = map (Crypto.baseDecode Crypto.BASE58) encoded
-  log $ maybe "Something went wrong" (\d -> "Decoded: " <> Crypto.toString d) decoded
+  let decoded = encoded >>= (Crypto.baseDecode Crypto.BASE58)
+
+  log $ maybe "Something went wrong" (\d -> "Decoded: " <> d) decoded
 ```
 
 
@@ -96,19 +99,24 @@ main = do
 
 ##### Generating a compressed Bitcoin address
 ```haskell
-btcAddress :: Crypto.PublicKey -> Maybe Crypto.EncodeData
-btcAddress pk = Crypto.toString pk
-  # Crypto.hash Crypto.SHA256
-  # Crypto.hash Crypto.SHA256
-  # Crypto.hash Crypto.RIPEMD160
-  # Crypto.baseEncode Crypto.BASE58
-
 main = do
   { public } <- Crypto.generateKeyPair
-  let address = btcAddress public
+  let ripemd  = public
+              # Crypto.hash Crypto.SHA256
+              # Crypto.hash Crypto.RIPEMD160
+
+  let versionedHex = "00" <> (Crypto.toString ripemd)
+
+  versioned <- Buffer.fromString versionedHex Encoding.Hex
+  let checksum  = Crypto.hash Crypto.SHA256 versioned
+                # Crypto.hash Crypto.SHA256
+                # Crypto.toString
+                # String.take 8
+
+  let address = Crypto.baseEncode Crypto.BASE58 (versionedHex <> checksum)
   log $ maybe "Something went wrong" (\bAddr -> "BTC address: " <> Crypto.toString bAddr) address
 
-  -- BTC address: 2coF1xKLYoUCoQc3nFYs9NgoauQJ
+  -- BTC address: 1BzasuqbvMibmh6bMsL8cMxue73uFUBsJ4
 ```
 
 ### Documentation

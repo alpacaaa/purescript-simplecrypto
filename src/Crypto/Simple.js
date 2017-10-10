@@ -4,14 +4,18 @@ const crypto = require("crypto")
 const getBasex = lazyLoad("base-x")
 const getSecp256k1 = lazyLoad("secp256k1")
 
-exports.hashWith = function(algo) {
+const hashBuffer = function(algo) {
   return function(value) {
     return crypto
       .createHash(algo)
       .update(value)
-      .digest("hex")
+      .digest()
   }
 }
+
+exports.hashBufferNative = hashBuffer
+
+exports.hashStringNative = hashBuffer
 
 const generatePrivateKey = function(bytes) {
   const privateKey = crypto.randomBytes(bytes)
@@ -22,6 +26,14 @@ const generatePrivateKey = function(bytes) {
   return generatePrivateKey(bytes)
 }
 
+exports.verifyPrivateKey = function(privateKey) {
+  return getSecp256k1().privateKeyVerify(privateKey)
+}
+
+exports.verifyPublicKey = function(publicKey) {
+  return getSecp256k1().publicKeyVerify(publicKey)
+}
+
 exports.createPrivateKey = function(bytes) {
   return function() {
     return generatePrivateKey(bytes)
@@ -29,7 +41,7 @@ exports.createPrivateKey = function(bytes) {
 }
 
 exports.derivePublicKey = function(privateKey) {
-  return getSecp256k1().publicKeyCreate(privateKey)
+  return getSecp256k1().publicKeyCreate(privateKey, false)
 }
 
 exports.privateKeyExport = function(privateKey) {
@@ -55,7 +67,7 @@ exports.signFn = function(success) {
       return function(message) {
         try {
           const ret = getSecp256k1().sign(
-            Buffer.from(message, "hex"),
+            message,
             privateKey
           )
           return success(ret.signature)
@@ -67,12 +79,12 @@ exports.signFn = function(success) {
   }
 }
 
-exports.verify = function(publicKey) {
+exports.verifyFn = function(publicKey) {
   return function(signature) {
     return function(message) {
       try {
         return getSecp256k1().verify(
-          Buffer.from(message, "hex"),
+          message,
           signature,
           publicKey
         )
