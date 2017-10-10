@@ -35,8 +35,8 @@ foreign import privateKeyExport :: PrivateKey -> Node.Buffer
 foreign import privateKeyImport :: forall a. (PrivateKey -> Maybe PrivateKey) -> Maybe a -> Node.Buffer -> Maybe PrivateKey
 foreign import signatureExport  :: Signature -> Node.Buffer
 foreign import signatureImport  :: forall a. (Signature -> Maybe Signature) -> Maybe a -> Node.Buffer -> Maybe Signature
-foreign import signFn           :: forall a. (Signature -> Maybe Signature) -> Maybe a -> PrivateKey -> Node.Buffer -> Maybe Signature
-foreign import verifyFn         :: PublicKey -> Signature -> Node.Buffer -> Boolean
+foreign import signFn           :: forall a. (Node.Buffer -> Maybe Node.Buffer) -> Maybe a -> PrivateKey -> Node.Buffer -> Maybe Node.Buffer
+foreign import verifyFn         :: PublicKey -> Node.Buffer -> Node.Buffer -> Boolean
 foreign import encodeWith       :: forall a. (EncodeData -> Maybe EncodeData) -> Maybe a -> Alphabet -> String -> Maybe EncodeData
 foreign import decodeWith       :: forall a. (String -> Maybe String) -> Maybe a -> Alphabet -> EncodeData -> Maybe String
 foreign import bufferToHex      :: forall a. a -> String
@@ -46,7 +46,7 @@ foreign import verifyPublicKey  :: PublicKey -> Boolean
 
 data PrivateKey
 data PublicKey
-data Signature
+data Signature = Signature Node.Buffer
 data EncodeData
 
 type KeyPair = { private :: PrivateKey, public :: PublicKey }
@@ -71,7 +71,7 @@ instance eqPublicKey :: Eq PublicKey where
   eq = bufferEq
 
 instance eqSignature :: Eq Signature where
-  eq = bufferEq
+  eq (Signature a) (Signature b) = (bufferToHex a) == (bufferToHex b)
 
 instance eqEncodeData :: Eq EncodeData where
   eq = bufferEq
@@ -99,9 +99,9 @@ instance serializablePublicKey :: Serializable PublicKey where
   toString         = bufferToHex
 
 instance serializableSignature :: Serializable Signature where
-  exportToBuffer   = coerceBuffer
-  importFromBuffer = Just <<< coerceBuffer
-  toString         = bufferToHex
+  exportToBuffer (Signature buff)  = buff
+  importFromBuffer buff = Just (Signature buff)
+  toString (Signature buff) = bufferToHex buff
 
 instance serializableEncodeData :: Serializable EncodeData where
   exportToBuffer   = coerceBuffer
@@ -157,10 +157,14 @@ hashToAlgo SHA512    = HashAlgorithm "sha512"
 hashToAlgo RIPEMD160 = HashAlgorithm "ripemd160"
 
 sign :: PrivateKey -> Digest -> Maybe Signature
-sign pk value = signFn Just Nothing pk (exportToBuffer value)
+sign pk value = 
+  let
+    maybeBuff = signFn Just Nothing pk (exportToBuffer value)
+  in
+  map Signature maybeBuff
 
 verify :: PublicKey -> Signature -> Digest -> Boolean
-verify key signature value = verifyFn key signature (exportToBuffer value)
+verify key (Signature signature) value = verifyFn key signature (exportToBuffer value)
 
 baseEncode :: BaseEncoding -> String -> Maybe EncodeData
 baseEncode encType content = encodeWith Just Nothing (baseAlphabet encType) content
