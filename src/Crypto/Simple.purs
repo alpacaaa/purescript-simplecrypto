@@ -60,18 +60,21 @@ newtype Alphabet = Alphabet String
 
 newtype HashAlgorithm = HashAlgorithm String
 
+eqBuffer :: Node.Buffer -> Node.Buffer -> Boolean
+eqBuffer a b = (bufferToHex a) == (bufferToHex b)
 
 instance eqPrivateKey :: Eq PrivateKey where
-  eq (PrivateKey a) (PrivateKey b) = (bufferToHex a) == (bufferToHex b)
+  eq (PrivateKey a) (PrivateKey b) = eqBuffer a b
 
 instance eqPublicKey :: Eq PublicKey where
-  eq (PublicKey a) (PublicKey b) = (bufferToHex a) == (bufferToHex b)
+  eq (PublicKey a) (PublicKey b)   = eqBuffer a b
 
 instance eqSignature :: Eq Signature where
-  eq (Signature a) (Signature b) = (bufferToHex a) == (bufferToHex b)
+  eq (Signature a) (Signature b)   = eqBuffer a b
 
 instance eqEncodeData :: Eq EncodeData where
-  eq (EncodeData a) (EncodeData b) = (bufferToHex a) == (bufferToHex b)
+  eq (EncodeData a) (EncodeData b) = eqBuffer a b
+
 
 class Serializable a where
   exportToBuffer   :: a -> Node.Buffer
@@ -86,24 +89,24 @@ importKey verifier tagger buff =
     Nothing
 
 instance serializablePrivateKey :: Serializable PrivateKey where
-  exportToBuffer (PrivateKey buff)  = buff
-  importFromBuffer = importKey verifyPrivateKey PrivateKey
-  toString (PrivateKey buff) = bufferToHex buff
+  exportToBuffer (PrivateKey buff) = buff
+  importFromBuffer                 = importKey verifyPrivateKey PrivateKey
+  toString (PrivateKey buff)       = bufferToHex buff
 
 instance serializablePublicKey :: Serializable PublicKey where
   exportToBuffer (PublicKey buff)  = buff
-  importFromBuffer = importKey verifyPublicKey PublicKey
-  toString (PublicKey buff) = bufferToHex buff
+  importFromBuffer                 = importKey verifyPublicKey PublicKey
+  toString (PublicKey buff)        = bufferToHex buff
 
 instance serializableSignature :: Serializable Signature where
   exportToBuffer (Signature buff)  = buff
-  importFromBuffer buff = Just (Signature buff)
-  toString (Signature buff) = bufferToHex buff
+  importFromBuffer buff            = Just (Signature buff)
+  toString (Signature buff)        = bufferToHex buff
 
 instance serializableEncodeData :: Serializable EncodeData where
-  exportToBuffer (EncodeData buff)  = buff
-  importFromBuffer buff = Just (EncodeData buff)
-  toString (EncodeData buff) = bufferToHex buff
+  exportToBuffer (EncodeData buff) = buff
+  importFromBuffer buff            = Just (EncodeData buff)
+  toString (EncodeData buff)       = bufferToHex buff
 
 instance serializableDigest :: Serializable Digest where
   exportToBuffer (Digest buff) = buff
@@ -140,7 +143,8 @@ instance hashableDigest :: Hashable Digest where
   hash = hashBuffer
 
 instance hashableBuffer :: Hashable Node.Buffer where
-  hash hashType buff = Digest $ hashBufferNative (hashToAlgo hashType) buff
+  hash hashType buff =
+    Digest $ hashBufferNative (hashToAlgo hashType) buff
 
 generateKeyPair :: forall e. Eff (e) KeyPair
 generateKeyPair = do
