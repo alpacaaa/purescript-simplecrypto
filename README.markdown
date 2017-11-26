@@ -27,11 +27,6 @@ You will also need to pull down a couple of packages from npm.
 
 ### Examples
 
-I like qualified imports
-```haskell
-import Crypto.Simple as Crypto
-```
-
 ##### Hash a string
 
 ```haskell
