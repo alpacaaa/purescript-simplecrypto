@@ -1,8 +1,14 @@
 "use strict"
 
 const crypto = require("crypto")
-const getBasex = lazyLoad("base-x")
-const getSecp256k1 = lazyLoad("secp256k1")
+
+const getBasex = lazyLoad(function() {
+  return require("base-x")
+})
+
+const getSecp256k1 = lazyLoad(function() {
+  return require("secp256k1")
+})
 
 const hashBuffer = function(algo) {
   return function(value) {
@@ -149,9 +155,9 @@ exports.decodeWith = function(success) {
 }
 
 // dirty trick to lazy load dependencies
-function lazyLoad(pkg) {
+function lazyLoad(loadPkg) {
   var fn = function() {
-    const loaded = require(pkg)
+    const loaded = loadPkg()
     fn = function() {
       return loaded
     }
