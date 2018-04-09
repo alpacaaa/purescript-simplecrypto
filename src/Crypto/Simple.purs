@@ -24,9 +24,12 @@ module Crypto.Simple
   ) where
 
 import Prelude
+
 import Control.Monad.Eff (Eff)
+import Control.Monad.Eff.Unsafe (unsafePerformEff)
 import Data.Maybe (Maybe(..))
 import Node.Buffer as Node
+import Node.Encoding (Encoding(..))
 
 foreign import hashBufferNative :: HashAlgorithm -> Node.Buffer -> Node.Buffer
 foreign import hashStringNative :: HashAlgorithm -> String -> Node.Buffer
@@ -41,7 +44,6 @@ foreign import verifyFn         :: Node.Buffer -> Node.Buffer -> Node.Buffer -> 
 foreign import encodeWith       :: forall a. (Node.Buffer -> Maybe Node.Buffer) -> Maybe a -> Alphabet -> String -> Maybe Node.Buffer
 foreign import decodeWith       :: forall a. (String -> Maybe String) -> Maybe a -> Alphabet -> Node.Buffer -> Maybe String
 foreign import bufferToHex      :: Node.Buffer -> String
-foreign import bufferFromHex    :: String -> Node.Buffer
 foreign import verifyPrivateKey :: Node.Buffer -> Boolean
 foreign import verifyPublicKey  :: Node.Buffer -> Boolean
 
@@ -91,35 +93,39 @@ importKey verifier tagger buff =
   else
     Nothing
 
+readHexString :: String -> Node.Buffer
+readHexString =
+  unsafePerformEff <<< flip Node.fromString Hex
+
 instance serializablePrivateKey :: Serializable PrivateKey where
   exportToBuffer (PrivateKey buff) = buff
   importFromBuffer                 = importKey verifyPrivateKey PrivateKey
   toString (PrivateKey buff)       = bufferToHex buff
-  fromString                       = importKey verifyPrivateKey PrivateKey <<< bufferFromHex
+  fromString                       = importKey verifyPrivateKey PrivateKey <<< readHexString
 
 instance serializablePublicKey :: Serializable PublicKey where
   exportToBuffer (PublicKey buff)  = buff
   importFromBuffer                 = importKey verifyPublicKey PublicKey
   toString (PublicKey buff)        = bufferToHex buff
-  fromString                       = importKey verifyPublicKey PublicKey <<< bufferFromHex
+  fromString                       = importKey verifyPublicKey PublicKey <<< readHexString
 
 instance serializableSignature :: Serializable Signature where
   exportToBuffer (Signature buff)  = buff
   importFromBuffer buff            = Just (Signature buff)
   toString (Signature buff)        = bufferToHex buff
-  fromString                       = Just <<< Signature <<< bufferFromHex
+  fromString                       = Just <<< Signature <<< readHexString
 
 instance serializableEncodeData :: Serializable EncodeData where
   exportToBuffer (EncodeData buff) = buff
   importFromBuffer buff            = Just (EncodeData buff)
   toString (EncodeData buff)       = bufferToHex buff
-  fromString                       = Just <<< EncodeData <<< bufferFromHex
+  fromString                       = Just <<< EncodeData <<< readHexString
 
 instance serializableDigest :: Serializable Digest where
   exportToBuffer (Digest buff) = buff
   importFromBuffer             = Just <<< Digest
   toString (Digest buff)       = bufferToHex buff
-  fromString                   = Just <<< Digest <<< bufferFromHex
+  fromString                   = Just <<< Digest <<< readHexString
 
 class Hashable a where
   hash :: Hash -> a -> Digest
