@@ -24,7 +24,6 @@ module Crypto.Simple
   ) where
 
 import Prelude
-
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Unsafe (unsafePerformEff)
 import Data.Maybe (Maybe(..))
