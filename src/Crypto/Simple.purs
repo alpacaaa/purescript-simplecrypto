@@ -75,6 +75,9 @@ instance eqSignature :: Eq Signature where
 instance eqEncodeData :: Eq EncodeData where
   eq (EncodeData a) (EncodeData b) = eqBuffer a b
 
+instance eqDigest :: Eq Digest where
+  eq (Digest a) (Digest b) = eqBuffer a b
+  
 
 class Serializable a where
   exportToBuffer   :: a -> Node.Buffer
