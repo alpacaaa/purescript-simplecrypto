@@ -122,6 +122,10 @@ exports.bufferToHex = function(buffer) {
   return buffer.toString("hex")
 }
 
+exports.bufferFromHex = function(string) {
+  return Buffer.from(string, "hex")
+}
+
 exports.encodeWith = function(success) {
   return function(failure) {
     return function(encoding) {
