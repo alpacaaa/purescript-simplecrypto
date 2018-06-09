@@ -2,16 +2,15 @@ module Test.Main where
 
 import Prelude
 
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, log)
+import Effect (Effect)
+import Effect.Console (log)
 import Crypto.Simple as Crypto
 import Data.Maybe (Maybe, fromJust)
 import Data.String as String
-import Node.Buffer (BUFFER)
 import Node.Buffer as Buffer
 import Node.Encoding as Encoding
 import Partial.Unsafe (unsafePartial)
-import Test.Assert (assert, ASSERT)
+import Test.Assert (assert)
 
 hashLength :: forall a. (Crypto.Serializable a) => a -> Int
 hashLength = String.length <<< Crypto.toString
@@ -26,7 +25,7 @@ importExportTest value =
   in
   try (Crypto.importFromBuffer exported)
 
-btcAddressTest :: forall e. String -> Eff (console :: CONSOLE, assert :: ASSERT, buffer :: BUFFER | e) String
+btcAddressTest :: String -> Effect String
 btcAddressTest key = do
   buff <- Buffer.fromString key Encoding.Hex
   let private = try (Crypto.importFromBuffer buff) :: Crypto.PrivateKey
@@ -46,7 +45,7 @@ btcAddressTest key = do
   pure (Crypto.toString address)
 
 
-main :: forall e. Eff (console :: CONSOLE, assert :: ASSERT, buffer :: BUFFER | e) Unit
+main :: Effect Unit
 main = do
   let msg = Crypto.hash Crypto.SHA256 "some msg"
   assert (hashLength msg == 64)

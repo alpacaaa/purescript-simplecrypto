@@ -23,13 +23,13 @@ module Crypto.Simple
   ) where
 
 import Prelude
-import Control.Monad.Eff (Eff)
+import Effect (Effect)
 import Data.Maybe (Maybe(..))
 import Node.Buffer as Node
 
 foreign import hashBufferNative :: HashAlgorithm -> Node.Buffer -> Node.Buffer
 foreign import hashStringNative :: HashAlgorithm -> String -> Node.Buffer
-foreign import createPrivateKey :: forall e. Int -> Eff (e) Node.Buffer
+foreign import createPrivateKey :: Int -> Effect Node.Buffer
 foreign import deriveKeyNative  :: Node.Buffer -> Node.Buffer
 foreign import privateKeyExport :: PrivateKey -> Node.Buffer
 foreign import privateKeyImport :: forall a. (PrivateKey -> Maybe PrivateKey) -> Maybe a -> Node.Buffer -> Maybe PrivateKey
@@ -149,7 +149,7 @@ instance hashableBuffer :: Hashable Node.Buffer where
   hash hashType buff =
     Digest $ hashBufferNative (hashToAlgo hashType) buff
 
-generateKeyPair :: forall e. Eff (e) KeyPair
+generateKeyPair :: Effect KeyPair
 generateKeyPair = do
   key <- createPrivateKey 32
   let private = PrivateKey key
