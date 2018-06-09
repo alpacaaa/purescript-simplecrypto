@@ -10,8 +10,8 @@ module Crypto.Simple
   , toString
   , baseEncode
   , baseDecode
-  , ctrEncode
-  , ctrDecode
+  , encryptCTR
+  , decryptCTR
   , Hash(..)
   , BaseEncoding(..)
   , PrivateKey
@@ -21,6 +21,8 @@ module Crypto.Simple
   , Digest
   , KeyPair
   , InitializationVector(..)
+  , EncryptedData
+  , CTRMode
   , class Serializable
   , class Hashable
   ) where
@@ -56,11 +58,18 @@ data PublicKey  = PublicKey Node.Buffer
 data Signature  = Signature Node.Buffer
 data EncodeData = EncodeData Node.Buffer
 data Digest     = Digest Node.Buffer
+data EncryptedData algo = EncryptedData Node.Buffer
 
 type KeyPair = { private :: PrivateKey, public :: PublicKey }
 
 
 data Hash = SHA1 | SHA256 | SHA512 | RIPEMD160
+
+data ECBMode
+data CBCMode
+data CFBMode
+data OFBMode
+data CTRMode
 
 data BaseEncoding = BASE58
 
@@ -205,14 +214,13 @@ generateInitializationVector :: Effect Int
 generateInitializationVector = do
   pure 1
 
--- TODO newtype these things. Function names are stupid. More algos could be added.
-ctrEncode :: PrivateKey -> InitializationVector -> String -> Effect Node.Buffer
-ctrEncode (PrivateKey pk) (InitializationVector iv) msg = do
+encryptCTR :: PrivateKey -> InitializationVector -> String -> Effect (EncryptedData CTRMode)
+encryptCTR (PrivateKey pk) (InitializationVector iv) msg = do
   encrypted <- nativeAESEncrypt pk iv msg
-  pure encrypted
+  pure (EncryptedData encrypted)
 
-ctrDecode :: PrivateKey -> InitializationVector -> Node.Buffer -> Effect String
-ctrDecode (PrivateKey pk) (InitializationVector iv) payload = do
+decryptCTR :: PrivateKey -> InitializationVector -> EncryptedData CTRMode -> Effect String
+decryptCTR (PrivateKey pk) (InitializationVector iv) (EncryptedData payload) = do
   decrypted <- nativeAESDecrypt pk iv payload
   s <- Node.toString Node.Encoding.UTF8 decrypted
   pure s

@@ -79,6 +79,6 @@ main = do
   let iv = Crypto.InitializationVector 1
       aesMsg = "la merda rosa"
 
-  encrypted <- Crypto.ctrEncode pair.private iv aesMsg
-  decrypted <- Crypto.ctrDecode pair.private iv encrypted
+  encrypted <- Crypto.encryptCTR pair.private iv aesMsg
+  decrypted <- Crypto.decryptCTR pair.private iv encrypted
   assert (decrypted == aesMsg)
