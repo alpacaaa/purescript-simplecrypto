@@ -173,14 +173,16 @@ function lazyLoad(loadPkg) {
 }
 
 exports.nativeAESEncrypt = function(privateKey) {
-  var aesjs = getAES()
-  var pk = aesjs.utils.hex.toBytes(privateKey.toString("hex"))
-  var instance = new aesjs.ModeOfOperation.ctr(pk, new aesjs.Counter(5))
-
-  return function(msg) {
-    return function() {
-      var textBytes = aesjs.utils.utf8.toBytes(msg)
-      return instance.encrypt(textBytes)
+  return function(iv) {
+    return function(msg) {
+      return function() {
+        var aesjs = getAES()
+        var pk = aesjs.utils.hex.toBytes(privateKey.toString("hex"))
+        var counter = new aesjs.Counter(iv)
+        var instance = new aesjs.ModeOfOperation.ctr(pk, counter)
+        var textBytes = aesjs.utils.utf8.toBytes(msg)
+        return instance.encrypt(textBytes)
+      }
     }
   }
 }

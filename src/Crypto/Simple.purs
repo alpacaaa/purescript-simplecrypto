@@ -19,6 +19,7 @@ module Crypto.Simple
   , EncodeData
   , Digest
   , KeyPair
+  , InitializationVector(..)
   , class Serializable
   , class Hashable
   ) where
@@ -43,7 +44,7 @@ foreign import decodeWith       :: forall a. (String -> Maybe String) -> Maybe a
 foreign import bufferToHex      :: Node.Buffer -> String
 foreign import verifyPrivateKey :: Node.Buffer -> Boolean
 foreign import verifyPublicKey  :: Node.Buffer -> Boolean
-foreign import nativeAESEncrypt :: Node.Buffer -> String -> Effect Node.Buffer
+foreign import nativeAESEncrypt :: Node.Buffer -> Int -> String -> Effect Node.Buffer
 
 data PrivateKey = PrivateKey Node.Buffer
 data PublicKey  = PublicKey Node.Buffer
@@ -61,6 +62,8 @@ data BaseEncoding = BASE58
 newtype Alphabet = Alphabet String
 
 newtype HashAlgorithm = HashAlgorithm String
+
+newtype InitializationVector = InitializationVector Int
 
 eqBuffer :: Node.Buffer -> Node.Buffer -> Boolean
 eqBuffer a b = (bufferToHex a) == (bufferToHex b)
@@ -197,7 +200,7 @@ generateInitializationVector :: Effect Int
 generateInitializationVector = do
   pure 1
 
-ctrEncode :: PrivateKey -> String -> Effect Digest
-ctrEncode (PrivateKey pk) msg = do
-  encrypted <- nativeAESEncrypt pk msg
+ctrEncode :: PrivateKey -> InitializationVector -> String -> Effect Digest
+ctrEncode (PrivateKey pk) (InitializationVector iv) msg = do
+  encrypted <- nativeAESEncrypt pk iv msg
   pure (hash SHA256 encrypted)

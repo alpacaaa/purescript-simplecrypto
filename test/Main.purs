@@ -76,6 +76,6 @@ main = do
   log ("BTC address: " <> address)
   assert (address == "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM")
 
-  let iv = 1
-  encrypted <- Crypto.ctrEncode pair.private "la merda rosa"
+  let iv = Crypto.InitializationVector 1
+  encrypted <- Crypto.ctrEncode pair.private iv "la merda rosa"
   pure unit
