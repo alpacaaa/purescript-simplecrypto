@@ -186,3 +186,18 @@ exports.nativeAESEncrypt = function(privateKey) {
     }
   }
 }
+
+exports.nativeAESDecrypt = function(privateKey) {
+  return function(iv) {
+    return function(payload) {
+      return function() {
+        var aesjs = getAES()
+        var pk = aesjs.utils.hex.toBytes(privateKey.toString("hex"))
+        var counter = new aesjs.Counter(iv)
+        var instance = new aesjs.ModeOfOperation.ctr(pk, counter)
+        var decrypted = instance.decrypt(payload)
+        return aesjs.utils.utf8.fromBytes(decrypted)
+      }
+    }
+  }
+}

@@ -77,5 +77,8 @@ main = do
   assert (address == "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM")
 
   let iv = Crypto.InitializationVector 1
-  encrypted <- Crypto.ctrEncode pair.private iv "la merda rosa"
-  pure unit
+      aesMsg = "la merda rosa"
+
+  encrypted <- Crypto.ctrEncode pair.private iv aesMsg
+  decrypted <- Crypto.ctrDecode pair.private iv encrypted
+  assert (decrypted == aesMsg)

@@ -11,6 +11,7 @@ module Crypto.Simple
   , baseEncode
   , baseDecode
   , ctrEncode
+  , ctrDecode
   , Hash(..)
   , BaseEncoding(..)
   , PrivateKey
@@ -28,6 +29,7 @@ import Prelude
 import Effect (Effect)
 import Data.Maybe (Maybe(..))
 import Node.Buffer as Node
+import Node.Encoding as Node.Encoding
 
 foreign import hashBufferNative :: HashAlgorithm -> Node.Buffer -> Node.Buffer
 foreign import hashStringNative :: HashAlgorithm -> String -> Node.Buffer
@@ -44,7 +46,10 @@ foreign import decodeWith       :: forall a. (String -> Maybe String) -> Maybe a
 foreign import bufferToHex      :: Node.Buffer -> String
 foreign import verifyPrivateKey :: Node.Buffer -> Boolean
 foreign import verifyPublicKey  :: Node.Buffer -> Boolean
+
+-- TODO Add failures
 foreign import nativeAESEncrypt :: Node.Buffer -> Int -> String -> Effect Node.Buffer
+foreign import nativeAESDecrypt :: Node.Buffer -> Int -> Node.Buffer -> Effect Node.Buffer
 
 data PrivateKey = PrivateKey Node.Buffer
 data PublicKey  = PublicKey Node.Buffer
@@ -200,7 +205,14 @@ generateInitializationVector :: Effect Int
 generateInitializationVector = do
   pure 1
 
-ctrEncode :: PrivateKey -> InitializationVector -> String -> Effect Digest
+-- TODO newtype these things. Function names are stupid. More algos could be added.
+ctrEncode :: PrivateKey -> InitializationVector -> String -> Effect Node.Buffer
 ctrEncode (PrivateKey pk) (InitializationVector iv) msg = do
   encrypted <- nativeAESEncrypt pk iv msg
-  pure (hash SHA256 encrypted)
+  pure encrypted
+
+ctrDecode :: PrivateKey -> InitializationVector -> Node.Buffer -> Effect String
+ctrDecode (PrivateKey pk) (InitializationVector iv) payload = do
+  decrypted <- nativeAESDecrypt pk iv payload
+  s <- Node.toString Node.Encoding.UTF8 decrypted
+  pure s
