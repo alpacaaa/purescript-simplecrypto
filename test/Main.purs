@@ -75,3 +75,7 @@ main = do
   address <- btcAddressTest "18E14A7B6A307F426A94F8114701E7C8E774E7F9A47E2C2035DB29A206321725"
   log ("BTC address: " <> address)
   assert (address == "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM")
+
+  let iv = 1
+  encrypted <- Crypto.ctrEncode pair.private "la merda rosa"
+  pure unit

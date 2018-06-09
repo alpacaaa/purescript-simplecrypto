@@ -10,6 +10,7 @@ module Crypto.Simple
   , toString
   , baseEncode
   , baseDecode
+  , ctrEncode
   , Hash(..)
   , BaseEncoding(..)
   , PrivateKey
@@ -42,6 +43,7 @@ foreign import decodeWith       :: forall a. (String -> Maybe String) -> Maybe a
 foreign import bufferToHex      :: Node.Buffer -> String
 foreign import verifyPrivateKey :: Node.Buffer -> Boolean
 foreign import verifyPublicKey  :: Node.Buffer -> Boolean
+foreign import nativeAESEncrypt :: Node.Buffer -> String -> Effect Node.Buffer
 
 data PrivateKey = PrivateKey Node.Buffer
 data PublicKey  = PublicKey Node.Buffer
@@ -190,3 +192,12 @@ baseDecode encType (EncodeData encoded) =
 
 baseAlphabet :: BaseEncoding -> Alphabet
 baseAlphabet BASE58 = Alphabet "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+
+generateInitializationVector :: Effect Int
+generateInitializationVector = do
+  pure 1
+
+ctrEncode :: PrivateKey -> String -> Effect Digest
+ctrEncode (PrivateKey pk) msg = do
+  encrypted <- nativeAESEncrypt pk msg
+  pure (hash SHA256 encrypted)
