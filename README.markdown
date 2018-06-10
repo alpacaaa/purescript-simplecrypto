@@ -122,7 +122,7 @@ main = do
 ```
 
 
-##### Generating a compressed Bitcoin address
+##### Encrypt/Decrypt with AES in CTR mode
 ```haskell
 main = do
   { private } <- Crypto.generateKeyPair
