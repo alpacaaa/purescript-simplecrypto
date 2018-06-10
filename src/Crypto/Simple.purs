@@ -40,13 +40,13 @@ foreign import hashStringNative :: HashAlgorithm -> String -> Node.Buffer
 foreign import createPrivateKey :: Int -> Effect Node.Buffer
 foreign import deriveKeyNative  :: Node.Buffer -> Node.Buffer
 foreign import privateKeyExport :: PrivateKey -> Node.Buffer
-foreign import privateKeyImport :: forall a. (PrivateKey -> Maybe PrivateKey) -> Maybe a -> Node.Buffer -> Maybe PrivateKey
+foreign import privateKeyImport :: (PrivateKey -> Maybe PrivateKey) -> (forall a. Maybe a) -> Node.Buffer -> Maybe PrivateKey
 foreign import signatureExport  :: Signature -> Node.Buffer
-foreign import signatureImport  :: forall a. (Signature -> Maybe Signature) -> Maybe a -> Node.Buffer -> Maybe Signature
-foreign import signFn           :: forall a. (Node.Buffer -> Maybe Node.Buffer) -> Maybe a -> Node.Buffer -> Node.Buffer -> Maybe Node.Buffer
+foreign import signatureImport  :: (Signature -> Maybe Signature) -> (forall a. Maybe a) -> Node.Buffer -> Maybe Signature
+foreign import signFn           :: (Node.Buffer -> Maybe Node.Buffer) -> (forall a. Maybe a) -> Node.Buffer -> Node.Buffer -> Maybe Node.Buffer
 foreign import verifyFn         :: Node.Buffer -> Node.Buffer -> Node.Buffer -> Boolean
-foreign import encodeWith       :: forall a. (Node.Buffer -> Maybe Node.Buffer) -> Maybe a -> Alphabet -> String -> Maybe Node.Buffer
-foreign import decodeWith       :: forall a. (String -> Maybe String) -> Maybe a -> Alphabet -> Node.Buffer -> Maybe String
+foreign import encodeWith       :: (Node.Buffer -> Maybe Node.Buffer) -> (forall a. Maybe a) -> Alphabet -> String -> Maybe Node.Buffer
+foreign import decodeWith       :: (String -> Maybe String) -> (forall a. Maybe a) -> Alphabet -> Node.Buffer -> Maybe String
 foreign import bufferToHex      :: Node.Buffer -> String
 foreign import verifyPrivateKey :: Node.Buffer -> Boolean
 foreign import verifyPublicKey  :: Node.Buffer -> Boolean
@@ -56,11 +56,12 @@ foreign import nativeAESEncrypt :: Node.Buffer -> Int -> String -> Effect Node.B
 foreign import nativeAESDecrypt :: Node.Buffer -> Int -> Node.Buffer -> Effect Node.Buffer
 foreign import nativeGenerateRandomNumber :: Effect Int
 
-data PrivateKey = PrivateKey Node.Buffer
-data PublicKey  = PublicKey Node.Buffer
-data Signature  = Signature Node.Buffer
-data EncodeData = EncodeData Node.Buffer
-data Digest     = Digest Node.Buffer
+newtype PrivateKey = PrivateKey Node.Buffer
+newtype PublicKey  = PublicKey Node.Buffer
+newtype Signature  = Signature Node.Buffer
+newtype EncodeData = EncodeData Node.Buffer
+newtype Digest     = Digest Node.Buffer
+
 data EncryptedData algo = EncryptedData Node.Buffer
 
 type KeyPair = { private :: PrivateKey, public :: PublicKey }
@@ -99,6 +100,9 @@ instance eqEncodeData :: Eq EncodeData where
 
 instance eqDigest :: Eq Digest where
   eq (Digest a) (Digest b) = eqBuffer a b
+
+instance eqEncryptedData :: Eq (EncryptedData a) where
+  eq (EncryptedData a) (EncryptedData b) = eqBuffer a b
   
 
 class Serializable a where
@@ -137,6 +141,11 @@ instance serializableDigest :: Serializable Digest where
   exportToBuffer (Digest buff) = buff
   importFromBuffer             = Just <<< Digest
   toString (Digest buff)       = bufferToHex buff
+
+instance serializableEncryptedData :: Serializable (EncryptedData a) where
+  exportToBuffer (EncryptedData buff) = buff
+  importFromBuffer                    = Just <<< EncryptedData
+  toString (EncryptedData buff)       = bufferToHex buff
 
 class Hashable a where
   hash :: Hash -> a -> Digest
