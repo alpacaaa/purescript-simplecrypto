@@ -10,6 +10,10 @@ const getSecp256k1 = lazyLoad(function() {
   return require("secp256k1")
 })
 
+const getAES = lazyLoad(function() {
+  return require("aes-js")
+})
+
 const hashBuffer = function(algo) {
   return function(value) {
     return crypto
@@ -166,4 +170,36 @@ function lazyLoad(loadPkg) {
   }
 
   return fn
+}
+
+exports.nativeAESEncrypt = function(privateKey) {
+  return function(iv) {
+    return function(payload) {
+      return function() {
+        var aesjs = getAES()
+        var pk = aesjs.utils.hex.toBytes(privateKey.toString("hex"))
+        var counter = new aesjs.Counter(iv)
+        var instance = new aesjs.ModeOfOperation.ctr(pk, counter)
+        return Buffer.from(instance.encrypt(payload))
+      }
+    }
+  }
+}
+
+exports.nativeAESDecrypt = function(privateKey) {
+  return function(iv) {
+    return function(payload) {
+      return function() {
+        var aesjs = getAES()
+        var pk = aesjs.utils.hex.toBytes(privateKey.toString("hex"))
+        var counter = new aesjs.Counter(iv)
+        var instance = new aesjs.ModeOfOperation.ctr(pk, counter)
+        return Buffer.from(instance.decrypt(payload))
+      }
+    }
+  }
+}
+
+exports.nativeGenerateRandomNumber = function() {
+  return crypto.randomBytes(8).readUInt32BE()
 }

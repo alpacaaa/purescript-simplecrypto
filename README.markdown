@@ -11,6 +11,7 @@ A set of useful cryptographic utilities for blockchain development.
 - ECDSA signatures
 - SHA256/SHA512/RIPEMD160 hashing
 - Base58 encoding/decoding
+- AES support (currently only in CTR mode)
 
 
 
@@ -23,9 +24,14 @@ You will also need to pull down a couple of packages from npm.
 
 `npm install --save secp256k1 base-x`
 
+AES (optional)
+
+`npm install --save aes-js`
+
 
 
 ### Examples
+
 
 ##### Hash a string
 
@@ -44,6 +50,7 @@ main = do
 -- Public key: 023a8e963fa94ca2f2ee6d71e8344c66f592f12aa24d4f07aeb6f22f83317d817a
 -- Private key: 121a5b5e1a783cba15d7e2ae753f0d8dc97b37aed19579ef1f0dbf13c7280a51
 ```
+
 
 ##### Sign and verify a message
 ```haskell
@@ -112,6 +119,17 @@ main = do
   log $ maybe "Something went wrong" (\bAddr -> "BTC address: " <> Crypto.toString bAddr) address
 
   -- BTC address: 1BzasuqbvMibmh6bMsL8cMxue73uFUBsJ4
+```
+
+
+##### Generating a compressed Bitcoin address
+```haskell
+main = do
+  { private } <- Crypto.generateKeyPair
+  iv <- Crypto.generateInitializationVector
+  msg <- Buffer.fromString "some msg to encrypt" Node.Encoding.UTF8
+  encrypted <- Crypto.encryptCTR private iv msg
+  log $ Crypto.toString encrypted
 ```
 
 ### Documentation

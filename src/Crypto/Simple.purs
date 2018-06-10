@@ -10,6 +10,10 @@ module Crypto.Simple
   , toString
   , baseEncode
   , baseDecode
+  , encryptCTR
+  , decryptCTR
+  , generateInitializationVector
+  , mkInitializationVector
   , Hash(..)
   , BaseEncoding(..)
   , PrivateKey
@@ -18,6 +22,9 @@ module Crypto.Simple
   , EncodeData
   , Digest
   , KeyPair
+  , InitializationVector
+  , EncryptedData(..)
+  , CTRMode
   , class Serializable
   , class Hashable
   ) where
@@ -25,34 +32,47 @@ module Crypto.Simple
 import Prelude
 import Effect (Effect)
 import Data.Maybe (Maybe(..))
-import Node.Buffer as Node
+import Node.Buffer (Buffer)
 
-foreign import hashBufferNative :: HashAlgorithm -> Node.Buffer -> Node.Buffer
-foreign import hashStringNative :: HashAlgorithm -> String -> Node.Buffer
-foreign import createPrivateKey :: Int -> Effect Node.Buffer
-foreign import deriveKeyNative  :: Node.Buffer -> Node.Buffer
-foreign import privateKeyExport :: PrivateKey -> Node.Buffer
-foreign import privateKeyImport :: forall a. (PrivateKey -> Maybe PrivateKey) -> Maybe a -> Node.Buffer -> Maybe PrivateKey
-foreign import signatureExport  :: Signature -> Node.Buffer
-foreign import signatureImport  :: forall a. (Signature -> Maybe Signature) -> Maybe a -> Node.Buffer -> Maybe Signature
-foreign import signFn           :: forall a. (Node.Buffer -> Maybe Node.Buffer) -> Maybe a -> Node.Buffer -> Node.Buffer -> Maybe Node.Buffer
-foreign import verifyFn         :: Node.Buffer -> Node.Buffer -> Node.Buffer -> Boolean
-foreign import encodeWith       :: forall a. (Node.Buffer -> Maybe Node.Buffer) -> Maybe a -> Alphabet -> String -> Maybe Node.Buffer
-foreign import decodeWith       :: forall a. (String -> Maybe String) -> Maybe a -> Alphabet -> Node.Buffer -> Maybe String
-foreign import bufferToHex      :: Node.Buffer -> String
-foreign import verifyPrivateKey :: Node.Buffer -> Boolean
-foreign import verifyPublicKey  :: Node.Buffer -> Boolean
+foreign import hashBufferNative :: HashAlgorithm -> Buffer -> Buffer
+foreign import hashStringNative :: HashAlgorithm -> String -> Buffer
+foreign import createPrivateKey :: Int -> Effect Buffer
+foreign import deriveKeyNative  :: Buffer -> Buffer
+foreign import privateKeyExport :: PrivateKey -> Buffer
+foreign import privateKeyImport :: (PrivateKey -> Maybe PrivateKey) -> (forall a. Maybe a) -> Buffer -> Maybe PrivateKey
+foreign import signatureExport  :: Signature -> Buffer
+foreign import signatureImport  :: (Signature -> Maybe Signature) -> (forall a. Maybe a) -> Buffer -> Maybe Signature
+foreign import signFn           :: (Buffer -> Maybe Buffer) -> (forall a. Maybe a) -> Buffer -> Buffer -> Maybe Buffer
+foreign import verifyFn         :: Buffer -> Buffer -> Buffer -> Boolean
+foreign import encodeWith       :: (Buffer -> Maybe Buffer) -> (forall a. Maybe a) -> Alphabet -> String -> Maybe Buffer
+foreign import decodeWith       :: (String -> Maybe String) -> (forall a. Maybe a) -> Alphabet -> Buffer -> Maybe String
+foreign import bufferToHex      :: Buffer -> String
+foreign import verifyPrivateKey :: Buffer -> Boolean
+foreign import verifyPublicKey  :: Buffer -> Boolean
+foreign import nativeGenerateRandomNumber :: Effect Int
 
-data PrivateKey = PrivateKey Node.Buffer
-data PublicKey  = PublicKey Node.Buffer
-data Signature  = Signature Node.Buffer
-data EncodeData = EncodeData Node.Buffer
-data Digest     = Digest Node.Buffer
+-- TODO Add failures
+foreign import nativeAESEncrypt :: PrivateKey -> InitializationVector -> Buffer -> Effect Buffer
+foreign import nativeAESDecrypt :: PrivateKey -> InitializationVector -> Buffer -> Effect Buffer
+
+newtype PrivateKey = PrivateKey Buffer
+newtype PublicKey  = PublicKey Buffer
+newtype Signature  = Signature Buffer
+newtype EncodeData = EncodeData Buffer
+newtype Digest     = Digest Buffer
+
+data EncryptedData algo = EncryptedData Buffer
 
 type KeyPair = { private :: PrivateKey, public :: PublicKey }
 
 
 data Hash = SHA1 | SHA256 | SHA512 | RIPEMD160
+
+data ECBMode
+data CBCMode
+data CFBMode
+data OFBMode
+data CTRMode
 
 data BaseEncoding = BASE58
 
@@ -60,7 +80,9 @@ newtype Alphabet = Alphabet String
 
 newtype HashAlgorithm = HashAlgorithm String
 
-eqBuffer :: Node.Buffer -> Node.Buffer -> Boolean
+newtype InitializationVector = InitializationVector Int
+
+eqBuffer :: Buffer -> Buffer -> Boolean
 eqBuffer a b = (bufferToHex a) == (bufferToHex b)
 
 instance eqPrivateKey :: Eq PrivateKey where
@@ -77,14 +99,17 @@ instance eqEncodeData :: Eq EncodeData where
 
 instance eqDigest :: Eq Digest where
   eq (Digest a) (Digest b) = eqBuffer a b
+
+instance eqEncryptedData :: Eq (EncryptedData a) where
+  eq (EncryptedData a) (EncryptedData b) = eqBuffer a b
   
 
 class Serializable a where
-  exportToBuffer   :: a -> Node.Buffer
-  importFromBuffer :: Node.Buffer -> Maybe a
+  exportToBuffer   :: a -> Buffer
+  importFromBuffer :: Buffer -> Maybe a
   toString         :: a -> String
 
-importKey :: forall a. (Node.Buffer -> Boolean) -> (Node.Buffer -> a) -> Node.Buffer -> Maybe a
+importKey :: forall a. (Buffer -> Boolean) -> (Buffer -> a) -> Buffer -> Maybe a
 importKey verifier tagger buff =
   if verifier buff then
     Just (tagger buff)
@@ -116,6 +141,11 @@ instance serializableDigest :: Serializable Digest where
   importFromBuffer             = Just <<< Digest
   toString (Digest buff)       = bufferToHex buff
 
+instance serializableEncryptedData :: Serializable (EncryptedData a) where
+  exportToBuffer (EncryptedData buff) = buff
+  importFromBuffer                    = Just <<< EncryptedData
+  toString (EncryptedData buff)       = bufferToHex buff
+
 class Hashable a where
   hash :: Hash -> a -> Digest
 
@@ -145,7 +175,7 @@ instance hashableEncodeData :: Hashable EncodeData where
 instance hashableDigest :: Hashable Digest where
   hash = hashBuffer
 
-instance hashableBuffer :: Hashable Node.Buffer where
+instance hashableBuffer :: Hashable Buffer where
   hash hashType buff =
     Digest $ hashBufferNative (hashToAlgo hashType) buff
 
@@ -190,3 +220,21 @@ baseDecode encType (EncodeData encoded) =
 
 baseAlphabet :: BaseEncoding -> Alphabet
 baseAlphabet BASE58 = Alphabet "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+
+generateInitializationVector :: Effect InitializationVector
+generateInitializationVector =
+  map InitializationVector nativeGenerateRandomNumber
+
+mkInitializationVector :: Int -> Maybe InitializationVector
+mkInitializationVector n
+  | n > 0     = Just (InitializationVector n)
+  | otherwise = Nothing
+
+encryptCTR :: PrivateKey -> InitializationVector -> Buffer -> Effect (EncryptedData CTRMode)
+encryptCTR pk iv payload = do
+  encrypted <- nativeAESEncrypt pk iv payload
+  pure (EncryptedData encrypted)
+
+decryptCTR :: PrivateKey -> InitializationVector -> EncryptedData CTRMode -> Effect Buffer
+decryptCTR pk iv (EncryptedData payload) =
+  nativeAESDecrypt pk iv payload

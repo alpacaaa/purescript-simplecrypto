@@ -45,9 +45,39 @@ btcAddressTest key = do
   pure (Crypto.toString address)
 
 
+testCTRCommutative :: Effect Unit
+testCTRCommutative = do
+  let msg = "some msg"
+  s <- Buffer.fromString msg Encoding.UTF8
+  let gen = do
+              pair <- Crypto.generateKeyPair
+              iv <- Crypto.generateInitializationVector
+              pure { key: pair.private, iv }
+
+  fst <- gen
+  snd <- gen
+
+  encrypted <- Crypto.encryptCTR fst.key fst.iv s
+  encryptedAgain <- Crypto.encryptCTR snd.key snd.iv (Crypto.exportToBuffer encrypted)
+
+  decrypted <- Crypto.decryptCTR fst.key fst.iv encryptedAgain
+  decryptedAgain <- Crypto.decryptCTR snd.key snd.iv (Crypto.EncryptedData decrypted)
+
+  ret <- Buffer.toString Encoding.UTF8 decryptedAgain
+  assert (msg == ret)
+
+
+buffEq :: Buffer.Buffer -> Buffer.Buffer -> Effect Unit
+buffEq a b = do
+  s1 <- Buffer.toString Encoding.UTF8 a
+  s2 <- Buffer.toString Encoding.UTF8 b
+  assert (s1 == s2)
+
 main :: Effect Unit
 main = do
-  let msg = Crypto.hash Crypto.SHA256 "some msg"
+  let textMsg = "some msg"
+      msg = Crypto.hash Crypto.SHA256 textMsg
+
   assert (hashLength msg == 64)
 
   pair <- Crypto.generateKeyPair
@@ -75,3 +105,14 @@ main = do
   address <- btcAddressTest "18E14A7B6A307F426A94F8114701E7C8E774E7F9A47E2C2035DB29A206321725"
   log ("BTC address: " <> address)
   assert (address == "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM")
+
+  bufMsg <- Buffer.fromString textMsg Encoding.UTF8
+  iv <- Crypto.generateInitializationVector
+  encrypted <- Crypto.encryptCTR pair.private iv bufMsg
+  assert (encrypted == importExportTest encrypted)
+
+  decrypted <- Crypto.decryptCTR pair.private iv encrypted
+  buffEq decrypted bufMsg
+
+  -- CTR should be commutative
+  testCTRCommutative
