@@ -78,6 +78,9 @@ main = do
 
   let aesMsg = "la merda rosa"
   iv <- Crypto.generateInitializationVector
+
   encrypted <- Crypto.encryptCTR pair.private iv aesMsg
+  assert (encrypted == importExportTest encrypted)
+
   decrypted <- Crypto.decryptCTR pair.private iv encrypted
   assert (decrypted == aesMsg)

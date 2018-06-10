@@ -32,37 +32,38 @@ module Crypto.Simple
 import Prelude
 import Effect (Effect)
 import Data.Maybe (Maybe(..))
-import Node.Buffer as Node
+import Node.Buffer (Buffer)
+import Node.Buffer as Buffer
 import Node.Encoding as Node.Encoding
 
-foreign import hashBufferNative :: HashAlgorithm -> Node.Buffer -> Node.Buffer
-foreign import hashStringNative :: HashAlgorithm -> String -> Node.Buffer
-foreign import createPrivateKey :: Int -> Effect Node.Buffer
-foreign import deriveKeyNative  :: Node.Buffer -> Node.Buffer
-foreign import privateKeyExport :: PrivateKey -> Node.Buffer
-foreign import privateKeyImport :: (PrivateKey -> Maybe PrivateKey) -> (forall a. Maybe a) -> Node.Buffer -> Maybe PrivateKey
-foreign import signatureExport  :: Signature -> Node.Buffer
-foreign import signatureImport  :: (Signature -> Maybe Signature) -> (forall a. Maybe a) -> Node.Buffer -> Maybe Signature
-foreign import signFn           :: (Node.Buffer -> Maybe Node.Buffer) -> (forall a. Maybe a) -> Node.Buffer -> Node.Buffer -> Maybe Node.Buffer
-foreign import verifyFn         :: Node.Buffer -> Node.Buffer -> Node.Buffer -> Boolean
-foreign import encodeWith       :: (Node.Buffer -> Maybe Node.Buffer) -> (forall a. Maybe a) -> Alphabet -> String -> Maybe Node.Buffer
-foreign import decodeWith       :: (String -> Maybe String) -> (forall a. Maybe a) -> Alphabet -> Node.Buffer -> Maybe String
-foreign import bufferToHex      :: Node.Buffer -> String
-foreign import verifyPrivateKey :: Node.Buffer -> Boolean
-foreign import verifyPublicKey  :: Node.Buffer -> Boolean
+foreign import hashBufferNative :: HashAlgorithm -> Buffer -> Buffer
+foreign import hashStringNative :: HashAlgorithm -> String -> Buffer
+foreign import createPrivateKey :: Int -> Effect Buffer
+foreign import deriveKeyNative  :: Buffer -> Buffer
+foreign import privateKeyExport :: PrivateKey -> Buffer
+foreign import privateKeyImport :: (PrivateKey -> Maybe PrivateKey) -> (forall a. Maybe a) -> Buffer -> Maybe PrivateKey
+foreign import signatureExport  :: Signature -> Buffer
+foreign import signatureImport  :: (Signature -> Maybe Signature) -> (forall a. Maybe a) -> Buffer -> Maybe Signature
+foreign import signFn           :: (Buffer -> Maybe Buffer) -> (forall a. Maybe a) -> Buffer -> Buffer -> Maybe Buffer
+foreign import verifyFn         :: Buffer -> Buffer -> Buffer -> Boolean
+foreign import encodeWith       :: (Buffer -> Maybe Buffer) -> (forall a. Maybe a) -> Alphabet -> String -> Maybe Buffer
+foreign import decodeWith       :: (String -> Maybe String) -> (forall a. Maybe a) -> Alphabet -> Buffer -> Maybe String
+foreign import bufferToHex      :: Buffer -> String
+foreign import verifyPrivateKey :: Buffer -> Boolean
+foreign import verifyPublicKey  :: Buffer -> Boolean
 
 -- TODO Add failures
-foreign import nativeAESEncrypt :: Node.Buffer -> Int -> String -> Effect Node.Buffer
-foreign import nativeAESDecrypt :: Node.Buffer -> Int -> Node.Buffer -> Effect Node.Buffer
+foreign import nativeAESEncrypt :: Buffer -> Int -> String -> Effect Buffer
+foreign import nativeAESDecrypt :: Buffer -> Int -> Buffer -> Effect Buffer
 foreign import nativeGenerateRandomNumber :: Effect Int
 
-newtype PrivateKey = PrivateKey Node.Buffer
-newtype PublicKey  = PublicKey Node.Buffer
-newtype Signature  = Signature Node.Buffer
-newtype EncodeData = EncodeData Node.Buffer
-newtype Digest     = Digest Node.Buffer
+newtype PrivateKey = PrivateKey Buffer
+newtype PublicKey  = PublicKey Buffer
+newtype Signature  = Signature Buffer
+newtype EncodeData = EncodeData Buffer
+newtype Digest     = Digest Buffer
 
-data EncryptedData algo = EncryptedData Node.Buffer
+data EncryptedData algo = EncryptedData Buffer
 
 type KeyPair = { private :: PrivateKey, public :: PublicKey }
 
@@ -83,7 +84,7 @@ newtype HashAlgorithm = HashAlgorithm String
 
 newtype InitializationVector = InitializationVector Int
 
-eqBuffer :: Node.Buffer -> Node.Buffer -> Boolean
+eqBuffer :: Buffer -> Buffer -> Boolean
 eqBuffer a b = (bufferToHex a) == (bufferToHex b)
 
 instance eqPrivateKey :: Eq PrivateKey where
@@ -106,11 +107,11 @@ instance eqEncryptedData :: Eq (EncryptedData a) where
   
 
 class Serializable a where
-  exportToBuffer   :: a -> Node.Buffer
-  importFromBuffer :: Node.Buffer -> Maybe a
+  exportToBuffer   :: a -> Buffer
+  importFromBuffer :: Buffer -> Maybe a
   toString         :: a -> String
 
-importKey :: forall a. (Node.Buffer -> Boolean) -> (Node.Buffer -> a) -> Node.Buffer -> Maybe a
+importKey :: forall a. (Buffer -> Boolean) -> (Buffer -> a) -> Buffer -> Maybe a
 importKey verifier tagger buff =
   if verifier buff then
     Just (tagger buff)
@@ -176,7 +177,7 @@ instance hashableEncodeData :: Hashable EncodeData where
 instance hashableDigest :: Hashable Digest where
   hash = hashBuffer
 
-instance hashableBuffer :: Hashable Node.Buffer where
+instance hashableBuffer :: Hashable Buffer where
   hash hashType buff =
     Digest $ hashBufferNative (hashToAlgo hashType) buff
 
@@ -239,5 +240,5 @@ encryptCTR (PrivateKey pk) (InitializationVector iv) msg = do
 decryptCTR :: PrivateKey -> InitializationVector -> EncryptedData CTRMode -> Effect String
 decryptCTR (PrivateKey pk) (InitializationVector iv) (EncryptedData payload) = do
   decrypted <- nativeAESDecrypt pk iv payload
-  s <- Node.toString Node.Encoding.UTF8 decrypted
+  s <- Buffer.toString Node.Encoding.UTF8 decrypted
   pure s
