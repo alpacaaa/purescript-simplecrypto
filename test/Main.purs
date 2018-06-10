@@ -76,9 +76,8 @@ main = do
   log ("BTC address: " <> address)
   assert (address == "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM")
 
-  let iv = Crypto.InitializationVector 1
-      aesMsg = "la merda rosa"
-
+  let aesMsg = "la merda rosa"
+  iv <- Crypto.generateInitializationVector
   encrypted <- Crypto.encryptCTR pair.private iv aesMsg
   decrypted <- Crypto.decryptCTR pair.private iv encrypted
   assert (decrypted == aesMsg)

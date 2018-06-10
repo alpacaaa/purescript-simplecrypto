@@ -12,6 +12,8 @@ module Crypto.Simple
   , baseDecode
   , encryptCTR
   , decryptCTR
+  , generateInitializationVector
+  , mkInitializationVector
   , Hash(..)
   , BaseEncoding(..)
   , PrivateKey
@@ -52,6 +54,7 @@ foreign import verifyPublicKey  :: Node.Buffer -> Boolean
 -- TODO Add failures
 foreign import nativeAESEncrypt :: Node.Buffer -> Int -> String -> Effect Node.Buffer
 foreign import nativeAESDecrypt :: Node.Buffer -> Int -> Node.Buffer -> Effect Node.Buffer
+foreign import nativeGenerateRandomNumber :: Effect Int
 
 data PrivateKey = PrivateKey Node.Buffer
 data PublicKey  = PublicKey Node.Buffer
@@ -210,9 +213,14 @@ baseDecode encType (EncodeData encoded) =
 baseAlphabet :: BaseEncoding -> Alphabet
 baseAlphabet BASE58 = Alphabet "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
-generateInitializationVector :: Effect Int
-generateInitializationVector = do
-  pure 1
+generateInitializationVector :: Effect InitializationVector
+generateInitializationVector =
+  map InitializationVector nativeGenerateRandomNumber
+
+mkInitializationVector :: Int -> Maybe InitializationVector
+mkInitializationVector n
+  | n > 0     = Just (InitializationVector n)
+  | otherwise = Nothing
 
 encryptCTR :: PrivateKey -> InitializationVector -> String -> Effect (EncryptedData CTRMode)
 encryptCTR (PrivateKey pk) (InitializationVector iv) msg = do

@@ -201,3 +201,7 @@ exports.nativeAESDecrypt = function(privateKey) {
     }
   }
 }
+
+exports.nativeGenerateRandomNumber = function() {
+  return crypto.randomBytes(8).readUInt32BE()
+}
