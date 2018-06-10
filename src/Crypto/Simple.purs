@@ -22,7 +22,7 @@ module Crypto.Simple
   , EncodeData
   , Digest
   , KeyPair
-  , InitializationVector(..)
+  , InitializationVector
   , EncryptedData(..)
   , CTRMode
   , class Serializable
@@ -49,11 +49,11 @@ foreign import decodeWith       :: (String -> Maybe String) -> (forall a. Maybe 
 foreign import bufferToHex      :: Buffer -> String
 foreign import verifyPrivateKey :: Buffer -> Boolean
 foreign import verifyPublicKey  :: Buffer -> Boolean
+foreign import nativeGenerateRandomNumber :: Effect Int
 
 -- TODO Add failures
 foreign import nativeAESEncrypt :: PrivateKey -> InitializationVector -> Buffer -> Effect Buffer
 foreign import nativeAESDecrypt :: PrivateKey -> InitializationVector -> Buffer -> Effect Buffer
-foreign import nativeGenerateRandomNumber :: Effect Int
 
 newtype PrivateKey = PrivateKey Buffer
 newtype PublicKey  = PublicKey Buffer
