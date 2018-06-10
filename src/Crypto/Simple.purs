@@ -23,7 +23,7 @@ module Crypto.Simple
   , Digest
   , KeyPair
   , InitializationVector(..)
-  , EncryptedData
+  , EncryptedData(..)
   , CTRMode
   , class Serializable
   , class Hashable
@@ -33,8 +33,6 @@ import Prelude
 import Effect (Effect)
 import Data.Maybe (Maybe(..))
 import Node.Buffer (Buffer)
-import Node.Buffer as Buffer
-import Node.Encoding as Node.Encoding
 
 foreign import hashBufferNative :: HashAlgorithm -> Buffer -> Buffer
 foreign import hashStringNative :: HashAlgorithm -> String -> Buffer
@@ -53,8 +51,8 @@ foreign import verifyPrivateKey :: Buffer -> Boolean
 foreign import verifyPublicKey  :: Buffer -> Boolean
 
 -- TODO Add failures
-foreign import nativeAESEncrypt :: Buffer -> Int -> String -> Effect Buffer
-foreign import nativeAESDecrypt :: Buffer -> Int -> Buffer -> Effect Buffer
+foreign import nativeAESEncrypt :: PrivateKey -> InitializationVector -> Buffer -> Effect Buffer
+foreign import nativeAESDecrypt :: PrivateKey -> InitializationVector -> Buffer -> Effect Buffer
 foreign import nativeGenerateRandomNumber :: Effect Int
 
 newtype PrivateKey = PrivateKey Buffer
@@ -232,13 +230,11 @@ mkInitializationVector n
   | n > 0     = Just (InitializationVector n)
   | otherwise = Nothing
 
-encryptCTR :: PrivateKey -> InitializationVector -> String -> Effect (EncryptedData CTRMode)
-encryptCTR (PrivateKey pk) (InitializationVector iv) msg = do
-  encrypted <- nativeAESEncrypt pk iv msg
+encryptCTR :: PrivateKey -> InitializationVector -> Buffer -> Effect (EncryptedData CTRMode)
+encryptCTR pk iv payload = do
+  encrypted <- nativeAESEncrypt pk iv payload
   pure (EncryptedData encrypted)
 
-decryptCTR :: PrivateKey -> InitializationVector -> EncryptedData CTRMode -> Effect String
-decryptCTR (PrivateKey pk) (InitializationVector iv) (EncryptedData payload) = do
-  decrypted <- nativeAESDecrypt pk iv payload
-  s <- Buffer.toString Node.Encoding.UTF8 decrypted
-  pure s
+decryptCTR :: PrivateKey -> InitializationVector -> EncryptedData CTRMode -> Effect Buffer
+decryptCTR pk iv (EncryptedData payload) =
+  nativeAESDecrypt pk iv payload
