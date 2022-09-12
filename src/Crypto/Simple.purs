@@ -61,6 +61,7 @@ newtype Signature  = Signature Buffer
 newtype EncodeData = EncodeData Buffer
 newtype Digest     = Digest Buffer
 
+data EncryptedData :: forall k. k -> Type
 data EncryptedData algo = EncryptedData Buffer
 
 type KeyPair = { private :: PrivateKey, public :: PublicKey }
@@ -102,7 +103,7 @@ instance eqDigest :: Eq Digest where
 
 instance eqEncryptedData :: Eq (EncryptedData a) where
   eq (EncryptedData a) (EncryptedData b) = eqBuffer a b
-  
+
 
 class Serializable a where
   exportToBuffer   :: a -> Buffer
@@ -197,7 +198,7 @@ hashToAlgo SHA512    = HashAlgorithm "sha512"
 hashToAlgo RIPEMD160 = HashAlgorithm "ripemd160"
 
 sign :: PrivateKey -> Digest -> Maybe Signature
-sign (PrivateKey key) value = 
+sign (PrivateKey key) value =
   let
     maybeBuff = signFn Just Nothing key (exportToBuffer value)
   in

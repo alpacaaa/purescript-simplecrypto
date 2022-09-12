@@ -17,6 +17,7 @@
     "secp256k1": "^3.3.0"
   },
   "devDependencies": {
-    "pscid": "^2.5.3"
+    "pscid": "^2.5.3",
+    "spago": "^0.20.9"
   }
 }
