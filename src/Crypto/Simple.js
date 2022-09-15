@@ -1,17 +1,22 @@
 "use strict"
 
-import * as crypto from "crypto";
+import baseX from 'base-x';
+import secp256k1 from 'secp256k1';
+import aesJs from 'aes-js';
 
 const getBasex = lazyLoad(function() {
-  return require("base-x")
+  return baseX;
+  //return require("base-x")
 })
 
 const getSecp256k1 = lazyLoad(function() {
-  return require("secp256k1")
+  return secp256k1;
+  //return require("secp256k1")
 })
 
 const getAES = lazyLoad(function() {
-  return require("aes-js")
+  return aesJs;
+  //return require("aes-js")
 })
 
 const hashBuffer = function(algo) {
@@ -172,7 +177,7 @@ function lazyLoad(loadPkg) {
   return fn
 }
 
-export function .nativeAESEncrypt(privateKey) {
+export function nativeAESEncrypt(privateKey) {
   return function(iv) {
     return function(payload) {
       return function() {
