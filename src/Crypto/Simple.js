@@ -1,17 +1,22 @@
 "use strict"
 
-const crypto = require("crypto")
+import baseX from 'base-x';
+import secp256k1 from 'secp256k1';
+import aesJs from 'aes-js';
 
 const getBasex = lazyLoad(function() {
-  return require("base-x")
+  return baseX;
+  //return require("base-x")
 })
 
 const getSecp256k1 = lazyLoad(function() {
-  return require("secp256k1")
+  return secp256k1;
+  //return require("secp256k1")
 })
 
 const getAES = lazyLoad(function() {
-  return require("aes-js")
+  return aesJs;
+  //return require("aes-js")
 })
 
 const hashBuffer = function(algo) {
@@ -23,9 +28,9 @@ const hashBuffer = function(algo) {
   }
 }
 
-exports.hashBufferNative = hashBuffer
+export function hashBufferNative() { return hashBuffer.apply(this, arguments); };
 
-exports.hashStringNative = hashBuffer
+export function hashStringNative() { return hashBuffer.apply(this, arguments); };
 
 const generatePrivateKey = function(bytes) {
   const privateKey = crypto.randomBytes(bytes)
@@ -36,29 +41,29 @@ const generatePrivateKey = function(bytes) {
   return generatePrivateKey(bytes)
 }
 
-exports.verifyPrivateKey = function(privateKey) {
+export function verifyPrivateKey(privateKey) {
   return getSecp256k1().privateKeyVerify(privateKey)
 }
 
-exports.verifyPublicKey = function(publicKey) {
+export function verifyPublicKey(publicKey) {
   return getSecp256k1().publicKeyVerify(publicKey)
 }
 
-exports.createPrivateKey = function(bytes) {
+export function createPrivateKey(bytes) {
   return function() {
     return generatePrivateKey(bytes)
   }
 }
 
-exports.deriveKeyNative = function(privateKey) {
+export function deriveKeyNative(privateKey) {
   return getSecp256k1().publicKeyCreate(privateKey, false)
 }
 
-exports.privateKeyExport = function(privateKey) {
+export function privateKeyExport(privateKey) {
   return getSecp256k1().privateKeyExport(privateKey)
 }
 
-exports.privateKeyImport = function(success) {
+export function privateKeyImport(success) {
   return function(failure) {
     return function(buffer) {
       try {
@@ -71,7 +76,7 @@ exports.privateKeyImport = function(success) {
   }
 }
 
-exports.signFn = function(success) {
+export function signFn(success) {
   return function(failure) {
     return function(privateKey) {
       return function(message) {
@@ -89,7 +94,7 @@ exports.signFn = function(success) {
   }
 }
 
-exports.verifyFn = function(publicKey) {
+export function verifyFn(publicKey) {
   return function(signature) {
     return function(message) {
       try {
@@ -105,11 +110,11 @@ exports.verifyFn = function(publicKey) {
   }
 }
 
-exports.signatureExport = function(signature) {
+export function signatureExport(signature) {
   return getSecp256k1().signatureExport(signature)
 }
 
-exports.signatureImport = function(success) {
+export function signatureImport(success) {
   return function(failure) {
     return function(buffer) {
       try {
@@ -122,11 +127,11 @@ exports.signatureImport = function(success) {
   }
 }
 
-exports.bufferToHex = function(buffer) {
+export function bufferToHex(buffer) {
   return buffer.toString("hex")
 }
 
-exports.encodeWith = function(success) {
+export function encodeWith(success) {
   return function(failure) {
     return function(encoding) {
       return function(value) {
@@ -141,7 +146,7 @@ exports.encodeWith = function(success) {
   }
 }
 
-exports.decodeWith = function(success) {
+export function decodeWith(success) {
   return function(failure) {
     return function(encoding) {
       return function(value) {
@@ -172,7 +177,7 @@ function lazyLoad(loadPkg) {
   return fn
 }
 
-exports.nativeAESEncrypt = function(privateKey) {
+export function nativeAESEncrypt(privateKey) {
   return function(iv) {
     return function(payload) {
       return function() {
@@ -186,7 +191,7 @@ exports.nativeAESEncrypt = function(privateKey) {
   }
 }
 
-exports.nativeAESDecrypt = function(privateKey) {
+export function nativeAESDecrypt(privateKey) {
   return function(iv) {
     return function(payload) {
       return function() {
@@ -200,6 +205,6 @@ exports.nativeAESDecrypt = function(privateKey) {
   }
 }
 
-exports.nativeGenerateRandomNumber = function() {
+export function nativeGenerateRandomNumber() {
   return crypto.randomBytes(8).readUInt32BE()
 }
