@@ -5,7 +5,7 @@
   , "maybe"
   , "node-buffer"
   , "prelude"
-, ]
+  ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs" ]
 }
